@@ -1,0 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.input { @apply border p-2 rounded w-full; }
+.btn-primary { @apply bg-blue-600 text-white py-2 px-4 rounded; }
