@@ -1,6 +1,9 @@
 const express = require("express");
 const db = require("../db");
 
+const { verifyToken, allowRoles } = require("../middleware/authMiddleware");
+
+
 const router = express.Router();
 
 router.post("/generate", (req, res) => {

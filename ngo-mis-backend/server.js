@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const db = require("./db");
+console.log("Loaded JWT_SECRET:", process.env.JWT_SECRET);
 
 const app = express();
 
@@ -12,12 +13,16 @@ const authRoutes = require("./routes/auth");
 const hrRoutes = require("./routes/hr");
 const attendanceRoutes = require("./routes/attendance");
 const payrollRoutes = require("./routes/payroll");
+const leaveRoutes = require("./routes/leave");
+const expenseRoutes = require("./routes/expenses");
 
 
 app.use("/api/auth", authRoutes);
 app.use("/api/hr", hrRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/payroll", payrollRoutes);
+app.use("/api/leave", leaveRoutes);
+app.use("/api/expenses", expenseRoutes);
 
 
 app.get("/", (req, res) => {
