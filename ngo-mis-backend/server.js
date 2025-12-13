@@ -17,6 +17,7 @@ const leaveRoutes = require("./routes/leave");
 const expenseRoutes = require("./routes/expenses");
 const dashboardRoutes = require("./routes/dashboard");
 const beneficiaryRoutes = require("./routes/beneficiaries");
+const reportRoutes = require("./routes/reports");
 
 
 app.use("/api/auth", authRoutes);
@@ -27,6 +28,7 @@ app.use("/api/leave", leaveRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/beneficiaries", beneficiaryRoutes);
+app.use("/api/reports", reportRoutes);
 
 
 app.get("/", (req, res) => {

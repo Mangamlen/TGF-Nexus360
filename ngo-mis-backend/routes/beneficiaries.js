@@ -98,39 +98,4 @@ router.delete("/delete/:id", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
   });
 });
 
-// 4️⃣ BENEFICIARY STATISTICS
-router.get("/beneficiary-stats", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
-  const sql = `
-    SELECT
-      COUNT(*) AS total_beneficiaries,
-      
-      SUM(CASE WHEN gender = 'Male' THEN 1 ELSE 0 END) AS total_male,
-      SUM(CASE WHEN gender = 'Female' THEN 1 ELSE 0 END) AS total_female,
-      
-      SUM(CASE WHEN training_status = 'Trained' THEN 1 ELSE 0 END) AS trained,
-      SUM(CASE WHEN training_status = 'Not Trained' THEN 1 ELSE 0 END) AS not_trained
-    FROM beneficiaries;
-  `;
-
-  db.query(sql, (err, summary) => {
-    if (err) return res.status(500).json({ error: err.message });
-
-    const villageSql = `
-      SELECT village, COUNT(*) AS total
-      FROM beneficiaries
-      GROUP BY village
-      ORDER BY total DESC;
-    `;
-
-    db.query(villageSql, (err2, villageData) => {
-      if (err2) return res.status(500).json({ error: err2.message });
-
-      res.json({
-        summary: summary[0],
-        village_distribution: villageData
-      });
-    });
-  });
-});
-
 module.exports = router;

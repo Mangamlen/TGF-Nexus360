@@ -98,36 +98,6 @@ router.get("/attendance-trend", verifyToken, allowRoles([1,2,5]), (req, res) => 
   });
 });
 
-/**
- * TOP BENEFICIARIES BY PRODUCTION
- * GET /api/dashboard/top-beneficiaries?limit=10
- * Roles: Admin/HR
- */
-router.get("/top-beneficiaries", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
-  const limit = req.query.limit || 5;
-
-  const sql = `
-    SELECT 
-      b.name, 
-      b.village, 
-      b.total_hives,
-      h.total_honey_kg
-    FROM beneficiaries b
-    LEFT JOIN (
-      SELECT beneficiary_id, SUM(quantity_kg) AS total_honey_kg
-      FROM honey_production
-      GROUP BY beneficiary_id
-    ) h ON b.id = h.beneficiary_id
-    ORDER BY h.total_honey_kg DESC
-    LIMIT ?
-  `;
-
-  db.query(sql, [limit], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
-  });
-});
-
 // MONTHLY HONEY PRODUCTION SUMMARY
 router.get("/honey-summary", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
   const sql = `
@@ -206,5 +176,156 @@ router.get("/beneficiary-stats", verifyToken, allowRoles([1, 2, 5]), (req, res) 
     });
   });
 });
+
+/**
+ * TOP HONEY PRODUCERS RANKING
+ * GET /api/dashboard/top-honey-producers?limit=10
+ * Roles: Admin / HR
+ */
+router.get("/top-honey-producers", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
+  const limit = parseInt(req.query.limit || "10", 10);
+
+  const sql = `
+    SELECT 
+      b.id AS beneficiary_id,
+      b.name,
+      b.village,
+      SUM(h.quantity_kg) AS total_honey_kg
+    FROM beneficiaries b
+    JOIN honey_production h ON h.beneficiary_id = b.id
+    GROUP BY b.id, b.name, b.village
+    ORDER BY total_honey_kg DESC
+    LIMIT ?
+  `;
+
+  db.query(sql, [limit], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
+/**
+ * TOP BENEFICIARIES (Overall Performance)
+ * GET /api/dashboard/top-beneficiaries
+ * Roles: Admin / HR
+ */
+router.get("/top-beneficiaries", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
+
+  const sql = `
+    SELECT 
+      b.id AS beneficiary_id,
+      b.name,
+      b.village,
+
+      IFNULL(SUM(h.quantity_kg), 0) AS total_honey_kg,
+      IFNULL(COUNT(be.id), 0) AS total_hives
+
+    FROM beneficiaries b
+
+    LEFT JOIN honey_production h 
+      ON h.beneficiary_id = b.id
+
+    LEFT JOIN beehives be
+      ON be.beneficiary_id = b.id
+
+    GROUP BY b.id, b.name, b.village
+
+    ORDER BY total_honey_kg DESC, total_hives DESC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("SQL ERROR:", err);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(results);
+  });
+});
+
+// 📈 HONEY PRODUCTION TREND (Monthly Line Chart)
+router.get("/honey-trend", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
+  const year = req.query.year || new Date().getFullYear();
+
+  const sql = `
+    SELECT 
+      month,
+      SUM(quantity_kg) AS total_kg
+    FROM honey_production
+    WHERE year = ?
+    GROUP BY month
+    ORDER BY FIELD(month,
+      'January','February','March','April','May','June',
+      'July','August','September','October','November','December'
+    )
+  `;
+
+  db.query(sql, [year], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
+// 🥧 BENEFICIARIES BY VILLAGE (Pie Chart)
+router.get("/beneficiaries-by-village", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
+  const sql = `
+    SELECT 
+      village,
+      COUNT(*) AS total
+    FROM beneficiaries
+    GROUP BY village
+    ORDER BY total DESC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
+// 🍩 GENDER DISTRIBUTION (Donut Chart)
+router.get("/gender-distribution", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
+  const sql = `
+    SELECT 
+      gender,
+      COUNT(*) AS total
+    FROM beneficiaries
+    GROUP BY gender
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
+// 🎛️ DASHBOARD FILTERS (Years, Villages)
+router.get("/filters", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
+
+  const yearSql = `
+    SELECT DISTINCT year 
+    FROM honey_production 
+    ORDER BY year DESC
+  `;
+
+  const villageSql = `
+    SELECT DISTINCT village 
+    FROM beneficiaries 
+    ORDER BY village ASC
+  `;
+
+  db.query(yearSql, (err, years) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    db.query(villageSql, (err2, villages) => {
+      if (err2) return res.status(500).json({ error: err2.message });
+
+      res.json({
+        years: years.map(y => y.year),
+        villages: villages.map(v => v.village)
+      });
+    });
+  });
+});
+
 
 module.exports = router;
