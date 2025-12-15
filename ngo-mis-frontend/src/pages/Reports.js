@@ -1,7 +1,18 @@
 import { useState } from "react";
+import { jwtDecode } from "jwt-decode";
 import API from "../services/api";
+import Navbar from "../components/Navbar";
+
 
 export default function Reports() {
+  const token = localStorage.getItem("token");
+
+  let roleId = null;
+  if (token) {
+    const user = jwtDecode(token);
+    roleId = user.role_id;
+  }
+
   const [month, setMonth] = useState("March");
   const [year, setYear] = useState("2025");
   const [status, setStatus] = useState("");
@@ -38,7 +49,10 @@ export default function Reports() {
   };
 
   return (
-    <div>
+  <>
+    <Navbar />
+
+    <div style={{ padding: "20px" }}>
       <h2>Monthly Reports</h2>
 
       <select value={month} onChange={e => setMonth(e.target.value)}>
@@ -57,9 +71,13 @@ export default function Reports() {
       <button onClick={checkStatus}>Check Status</button>
       <button onClick={downloadPDF}>PDF</button>
       <button onClick={downloadExcel}>Excel</button>
-      <button onClick={lockReport}>Lock</button>
+
+      {[1, 2, 5].includes(roleId) && (
+        <button onClick={lockReport}>Lock</button>
+      )}
 
       <h3>Status: {status}</h3>
     </div>
-  );
+  </>
+);
 }
