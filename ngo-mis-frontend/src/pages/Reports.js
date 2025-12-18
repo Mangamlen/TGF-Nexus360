@@ -68,15 +68,49 @@ export default function Reports() {
 
       <br /><br />
 
-      <button onClick={checkStatus}>Check Status</button>
-      <button onClick={downloadPDF}>PDF</button>
-      <button onClick={downloadExcel}>Excel</button>
+<button onClick={checkStatus}>Check Status</button>
 
-      {[1, 2, 5].includes(roleId) && (
-        <button onClick={lockReport}>Lock</button>
-      )}
+<button
+  onClick={downloadPDF}
+  disabled={status === "Locked"}
+>
+  PDF
+</button>
 
-      <h3>Status: {status}</h3>
+<button
+  onClick={downloadExcel}
+  disabled={status === "Locked"}
+>
+  Excel
+</button>
+
+{[1, 2, 5].includes(roleId) && (
+  <button
+    onClick={lockReport}
+    disabled={status === "Locked"}
+  >
+    Lock
+  </button>
+)}
+
+<h3>
+  Status:
+  <span
+    style={{
+      marginLeft: "10px",
+      padding: "4px 10px",
+      borderRadius: "6px",
+      color: "white",
+      background:
+        status === "Locked" ? "#c0392b" :
+        status === "Approved" ? "#27ae60" :
+        status === "Submitted" ? "#f39c12" :
+        "#7f8c8d"
+    }}
+  >
+    {status || "Draft"}
+  </span>
+</h3>
     </div>
   </>
 );

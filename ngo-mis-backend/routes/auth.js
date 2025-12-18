@@ -1,10 +1,13 @@
 const express = require("express");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs"); // ✅ FIXED
 const jwt = require("jsonwebtoken");
-const db = require("../db"); 
+const db = require("../db");
 
 const router = express.Router();
 
+/* =========================
+   REGISTER
+========================= */
 router.post("/register", async (req, res) => {
   const { name, email, password, role_id } = req.body;
 
@@ -18,7 +21,7 @@ router.post("/register", async (req, res) => {
     const sql =
       "INSERT INTO users (name, email, password, role_id) VALUES (?, ?, ?, ?)";
 
-    db.query(sql, [name, email, hashedPassword, role_id], (err) => {
+    db.query(sql, [name, email, hashedPassword, role_id], err => {
       if (err) return res.status(500).json({ error: err.message });
 
       res.json({ message: "User registered successfully" });
@@ -28,6 +31,9 @@ router.post("/register", async (req, res) => {
   }
 });
 
+/* =========================
+   LOGIN
+========================= */
 router.post("/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -39,10 +45,11 @@ router.post("/login", (req, res) => {
     }
 
     const user = results[0];
-    const isMatch = await bcrypt.compare(password, user.password);
 
-    if (!isMatch)
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
       return res.status(401).json({ error: "Invalid email or password" });
+    }
 
     const token = jwt.sign(
       { id: user.id, role_id: user.role_id },
@@ -57,8 +64,8 @@ router.post("/login", (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
-        role_id: user.role_id,
-      },
+        role_id: user.role_id
+      }
     });
   });
 });

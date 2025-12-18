@@ -89,39 +89,84 @@ router.get("/monthly/excel", verifyToken, allowRoles([1,2,5]), async (req, res) 
 });
 
 /* =========================================================
-   🔒 CHECK LOCK + PDF GENERATION
+   🔒 CHECK LOCK + PDF GENERATION (FINAL)
    ========================================================= */
 router.get("/monthly/pdf", verifyToken, allowRoles([1,2,5]), (req, res) => {
   const { month, year } = req.query;
-  if (!month || !year) return res.status(400).json({ error: "month & year required" });
 
+  if (!month || !year) {
+    return res.status(400).json({ error: "month and year are required" });
+  }
+
+  // 🔒 Check lock status FIRST
   const lockSql = `
     SELECT status FROM report_status
-    WHERE report_type='monthly' AND month=? AND year=?
+    WHERE report_type = 'monthly' AND month = ? AND year = ?
   `;
 
   db.query(lockSql, [month, year], (err, r) => {
     if (err) return res.status(500).json({ error: err.message });
-    if (r[0]?.status === "Locked") {
-      return res.status(403).json({ error: "Report is locked" });
+
+    // ⛔ HARD STOP if locked
+    if (r?.[0]?.status === "Locked") {
+      return res.status(403).json({
+        error: "Report is locked and cannot be regenerated"
+      });
     }
 
-    const doc = new PDFDocument({ margin: 40 });
+    // ✅ Generate PDF only if NOT locked
+    const doc = new PDFDocument({ margin: 50 });
+
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename=Monthly_${month}_${year}.pdf`);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=Monthly_Report_${month}_${year}.pdf`
+    );
+
     doc.pipe(res);
 
     doc.fontSize(16).text("Monthly Project Report", { align: "center" });
     doc.moveDown();
-    doc.text(`Period: ${month} ${year}`);
-    doc.moveDown(2);
-    doc.text("Authorized Signatory:");
-    doc.moveDown(2);
-    doc.text("Signature: _____________________");
+    doc.text(`Reporting Period: ${month} ${year}`);
+    doc.moveDown();
+    doc.text("This is an official report generated for CSR/Govt use.");
 
     doc.end();
   });
 });
+
+/* =========================================================
+   📤 SUBMIT REPORT
+   ========================================================= */
+router.post(
+  "/submit",
+  verifyToken,
+  allowRoles([1, 2, 5]),
+  (req, res) => {
+    const { report_type, month, year } = req.body;
+
+    if (!report_type || !month || !year) {
+      return res.status(400).json({ error: "All fields required" });
+    }
+
+    db.query(
+      `
+      INSERT INTO report_status (report_type, month, year, status, updated_by)
+      VALUES (?, ?, ?, 'Submitted', ?)
+      ON DUPLICATE KEY UPDATE
+        status='Submitted',
+        updated_by=?,
+        updated_at=CURRENT_TIMESTAMP
+      `,
+      [report_type, month, year, req.user.id, req.user.id],
+      err => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: "Report submitted successfully" });
+      }
+    );
+  }
+);
+
 
 /* =========================================================
    📌 REPORT STATUS (GET)
