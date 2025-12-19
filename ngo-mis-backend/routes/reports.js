@@ -9,8 +9,9 @@ const router = express.Router();
 /* =========================================================
    📊 MONTHLY REPORT (JSON)
    ========================================================= */
-router.get("/monthly", verifyToken, allowRoles([1,2,5]), (req, res) => {
+router.get("/monthly", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
   const { month, year } = req.query;
+
   if (!month || !year) {
     return res.status(400).json({ error: "month and year are required" });
   }
@@ -22,9 +23,16 @@ router.get("/monthly", verifyToken, allowRoles([1,2,5]), (req, res) => {
     WHERE MONTH(created_at)=MONTH(STR_TO_DATE(?, '%M'))
     AND YEAR(created_at)=?
   `;
-  const q2 = `SELECT IFNULL(SUM(quantity_kg),0) total FROM honey_production WHERE month=? AND year=?`;
+
+  const q2 = `
+    SELECT IFNULL(SUM(quantity_kg),0) total
+    FROM honey_production
+    WHERE month=? AND year=?
+  `;
+
   const q3 = `
-    SELECT IFNULL(SUM(amount),0) total FROM expenses
+    SELECT IFNULL(SUM(amount),0) total
+    FROM expenses
     WHERE MONTH(created_at)=MONTH(STR_TO_DATE(?, '%M'))
     AND YEAR(created_at)=?
   `;
@@ -50,9 +58,11 @@ router.get("/monthly", verifyToken, allowRoles([1,2,5]), (req, res) => {
 /* =========================================================
    📥 MONTHLY REPORT (EXCEL)
    ========================================================= */
-router.get("/monthly/excel", verifyToken, allowRoles([1,2,5]), async (req, res) => {
+router.get("/monthly/excel", verifyToken, allowRoles([1, 2, 5]), async (req, res) => {
   const { month, year } = req.query;
-  if (!month || !year) return res.status(400).json({ error: "month & year required" });
+  if (!month || !year) {
+    return res.status(400).json({ error: "month & year required" });
+  }
 
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Monthly Report");
@@ -63,15 +73,19 @@ router.get("/monthly/excel", verifyToken, allowRoles([1,2,5]), async (req, res) 
   ];
 
   const [[ben]] = await db.promise().query(
-    `SELECT COUNT(*) total FROM beneficiaries WHERE MONTH(created_at)=MONTH(STR_TO_DATE(?, '%M')) AND YEAR(created_at)=?`,
+    `SELECT COUNT(*) total FROM beneficiaries
+     WHERE MONTH(created_at)=MONTH(STR_TO_DATE(?, '%M')) AND YEAR(created_at)=?`,
     [month, year]
   );
+
   const [[hon]] = await db.promise().query(
     `SELECT IFNULL(SUM(quantity_kg),0) total FROM honey_production WHERE month=? AND year=?`,
     [month, year]
   );
+
   const [[exp]] = await db.promise().query(
-    `SELECT IFNULL(SUM(amount),0) total FROM expenses WHERE MONTH(created_at)=MONTH(STR_TO_DATE(?, '%M')) AND YEAR(created_at)=?`,
+    `SELECT IFNULL(SUM(amount),0) total FROM expenses
+     WHERE MONTH(created_at)=MONTH(STR_TO_DATE(?, '%M')) AND YEAR(created_at)=?`,
     [month, year]
   );
 
@@ -82,103 +96,157 @@ router.get("/monthly/excel", verifyToken, allowRoles([1,2,5]), async (req, res) 
     { metric: "Expenses (₹)", value: exp.total }
   ]);
 
-  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-  res.setHeader("Content-Disposition", `attachment; filename=Monthly_${month}_${year}.xlsx`);
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  );
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename=Monthly_${month}_${year}.xlsx`
+  );
+
   await workbook.xlsx.write(res);
   res.end();
 });
 
 /* =========================================================
-   🔒 CHECK LOCK + PDF GENERATION (FINAL)
+   📄 PDF GENERATION (BLOCKED AFTER APPROVAL)
    ========================================================= */
-router.get("/monthly/pdf", verifyToken, allowRoles([1,2,5]), (req, res) => {
+router.get("/monthly/pdf", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
   const { month, year } = req.query;
 
   if (!month || !year) {
     return res.status(400).json({ error: "month and year are required" });
   }
 
-  // 🔒 Check lock status FIRST
-  const lockSql = `
-    SELECT status FROM report_status
-    WHERE report_type = 'monthly' AND month = ? AND year = ?
-  `;
+  db.query(
+    `SELECT status FROM report_status
+     WHERE report_type='monthly' AND month=? AND year=?`,
+    [month, year],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
 
-  db.query(lockSql, [month, year], (err, r) => {
-    if (err) return res.status(500).json({ error: err.message });
+      if (["Approved", "Locked"].includes(rows?.[0]?.status)) {
+        return res.status(403).json({
+          error: "PDF cannot be regenerated after approval"
+        });
+      }
 
-    // ⛔ HARD STOP if locked
-    if (r?.[0]?.status === "Locked") {
-      return res.status(403).json({
-        error: "Report is locked and cannot be regenerated"
-      });
+      const doc = new PDFDocument({ margin: 50 });
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename=Monthly_Report_${month}_${year}.pdf`
+      );
+
+      doc.pipe(res);
+      doc.fontSize(16).text("Monthly Project Report", { align: "center" });
+      doc.moveDown();
+      doc.text(`Reporting Period: ${month} ${year}`);
+      doc.moveDown();
+      doc.text("Official report generated by system.");
+      doc.end();
     }
-
-    // ✅ Generate PDF only if NOT locked
-    const doc = new PDFDocument({ margin: 50 });
-
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=Monthly_Report_${month}_${year}.pdf`
-    );
-
-    doc.pipe(res);
-
-    doc.fontSize(16).text("Monthly Project Report", { align: "center" });
-    doc.moveDown();
-    doc.text(`Reporting Period: ${month} ${year}`);
-    doc.moveDown();
-    doc.text("This is an official report generated for CSR/Govt use.");
-
-    doc.end();
-  });
+  );
 });
 
 /* =========================================================
    📤 SUBMIT REPORT
    ========================================================= */
-router.post(
-  "/submit",
-  verifyToken,
-  allowRoles([1, 2, 5]),
-  (req, res) => {
-    const { report_type, month, year } = req.body;
+router.post("/submit", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
+  const { report_type, month, year } = req.body;
 
-    if (!report_type || !month || !year) {
-      return res.status(400).json({ error: "All fields required" });
-    }
-
-    db.query(
-      `
-      INSERT INTO report_status (report_type, month, year, status, updated_by)
-      VALUES (?, ?, ?, 'Submitted', ?)
-      ON DUPLICATE KEY UPDATE
-        status='Submitted',
-        updated_by=?,
-        updated_at=CURRENT_TIMESTAMP
-      `,
-      [report_type, month, year, req.user.id, req.user.id],
-      err => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: "Report submitted successfully" });
-      }
-    );
+  if (!report_type || !month || !year) {
+    return res.status(400).json({ error: "All fields required" });
   }
-);
 
+  db.query(
+    `
+    INSERT INTO report_status
+      (report_type, month, year, status, submitted_by, submitted_at)
+    VALUES (?, ?, ?, 'Submitted', ?, NOW())
+    ON DUPLICATE KEY UPDATE
+      status='Submitted',
+      submitted_by=VALUES(submitted_by),
+      submitted_at=NOW()
+    `,
+    [report_type, month, year, req.user.id],
+    err => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: "Report submitted successfully" });
+    }
+  );
+});
 
 /* =========================================================
-   📌 REPORT STATUS (GET)
+   ✅ APPROVE REPORT (SUPER ADMIN ONLY)
    ========================================================= */
-router.get("/status", verifyToken, allowRoles([1,2,5]), (req, res) => {
+router.post("/approve", verifyToken, allowRoles([1]), (req, res) => {
+  const { report_type, month, year } = req.body;
+
+  if (!report_type || !month || !year) {
+    return res.status(400).json({ error: "All fields required" });
+  }
+
+  db.query(
+    `
+    UPDATE report_status
+    SET
+      status='Approved',
+      approved_by=?,
+      approved_at=NOW()
+    WHERE report_type=? AND month=? AND year=? AND status='Submitted'
+    `,
+    [req.user.id, report_type, month, year],
+    err => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: "Report approved successfully" });
+    }
+  );
+});
+
+/* =========================================================
+   🔐 LOCK REPORT (FINAL STATE)
+   ========================================================= */
+router.post("/status", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
+  const { report_type, month, year, status } = req.body;
+
+  if (!report_type || !month || !year || status !== "Locked") {
+    return res.status(400).json({ error: "Invalid lock request" });
+  }
+
+  db.query(
+    `
+    UPDATE report_status
+    SET
+      status='Locked',
+      locked_by=?,
+      locked_at=NOW()
+    WHERE report_type=? AND month=? AND year=? AND status='Approved'
+    `,
+    [req.user.id, report_type, month, year],
+    err => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: "Report locked successfully" });
+    }
+  );
+});
+
+/* =========================================================
+   📌 GET REPORT STATUS
+   ========================================================= */
+router.get("/status", verifyToken, (req, res) => {
   const { type, month, year } = req.query;
+
   if (!type || !month || !year) {
     return res.status(400).json({ error: "type, month, year required" });
   }
 
   db.query(
-    `SELECT status, updated_at FROM report_status WHERE report_type=? AND month=? AND year=?`,
+    `SELECT status, submitted_at, approved_at, locked_at
+     FROM report_status
+     WHERE report_type=? AND month=? AND year=?`,
     [type, month, year],
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -189,29 +257,47 @@ router.get("/status", verifyToken, allowRoles([1,2,5]), (req, res) => {
 });
 
 /* =========================================================
-   ✅ REPORT STATUS (POST)
+   🧾 REPORT AUDIT HISTORY
    ========================================================= */
-router.post("/status", verifyToken, allowRoles([1,2,5]), (req, res) => {
-  const { report_type, month, year, status } = req.body;
-  if (!report_type || !month || !year || !status) {
-    return res.status(400).json({ error: "All fields required" });
+router.get("/audit", verifyToken, allowRoles([1,2,5]), (req, res) => {
+  const { type, month, year } = req.query;
+
+  if (!type || !month || !year) {
+    return res.status(400).json({ error: "type, month, year required" });
   }
 
-  db.query(
-    `
-    INSERT INTO report_status (report_type, month, year, status, updated_by)
-    VALUES (?,?,?,?,?)
-    ON DUPLICATE KEY UPDATE
-      status=VALUES(status),
-      updated_by=VALUES(updated_by),
-      updated_at=CURRENT_TIMESTAMP
-    `,
-    [report_type, month, year, status, req.user.id],
-    err => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ message: "Status updated" });
+  const sql = `
+    SELECT 
+      rs.status,
+
+      u1.name AS submitted_by,
+      rs.submitted_at,
+
+      u2.name AS approved_by,
+      rs.approved_at,
+
+      u3.name AS locked_by,
+      rs.locked_at
+
+    FROM report_status rs
+    LEFT JOIN users u1 ON rs.submitted_by = u1.id
+    LEFT JOIN users u2 ON rs.approved_by = u2.id
+    LEFT JOIN users u3 ON rs.locked_by = u3.id
+
+    WHERE rs.report_type = ?
+      AND rs.month = ?
+      AND rs.year = ?
+  `;
+
+  db.query(sql, [type, month, year], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    if (!rows.length) {
+      return res.json({ status: "Draft" });
     }
-  );
+
+    res.json(rows[0]);
+  });
 });
 
 module.exports = router;
