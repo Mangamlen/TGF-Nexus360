@@ -6,70 +6,69 @@ import Navbar from "../components/Navbar";
 export default function Reports() {
   /* ================= AUTH ================= */
   const token = localStorage.getItem("token");
-
   let roleId = null;
-  try {
-    if (token) {
-      const user = jwtDecode(token);
-      roleId = user.role_id;
-    }
-  } catch {
-    roleId = null;
+
+  if (token) {
+    const user = jwtDecode(token);
+    roleId = user.role_id;
   }
 
   /* ================= STATE ================= */
   const [month, setMonth] = useState("March");
-  const [year, setYear] = useState("2025");
+  const [year, setYear] = useState(2025);
   const [status, setStatus] = useState("Draft");
   const [audit, setAudit] = useState(null);
 
-  /* ================= ACTIONS ================= */
+  const REPORT_TYPE = "monthly"; // ✅ SINGLE SOURCE OF TRUTH
 
-  const loadAudit = useCallback(async () => {
+  /* ================= FETCH STATUS ================= */
+  const fetchStatus = useCallback(async () => {
     try {
-      const res = await API.get(
-        `/reports/audit?type=monthly&month=${month}&year=${year}`
-      );
-      setAudit(res.data);
-    } catch {
-      setAudit(null);
+      const res = await API.get("/reports/status", {
+        params: {
+          report_type: REPORT_TYPE,
+          month,
+          year
+        }
+      });
+      setStatus(res.data.status || "Draft");
+    } catch (err) {
+      console.error(err);
     }
   }, [month, year]);
 
-  const checkStatus = useCallback(async () => {
+  /* ================= FETCH AUDIT ================= */
+  const fetchAudit = useCallback(async () => {
     try {
-      const res = await API.get(
-        `/reports/status?type=monthly&month=${month}&year=${year}`
-      );
-      setStatus(res.data.status || "Draft");
-      loadAudit(); // 🔗 keep audit in sync
+      const res = await API.get("/reports/audit", {
+        params: {
+          report_type: REPORT_TYPE,
+          month,
+          year
+        }
+      });
+      setAudit(res.data);
     } catch (err) {
-      alert(err.response?.data?.error || "Failed to fetch report status");
+      console.error(err);
     }
-  }, [month, year, loadAudit]);
+  }, [month, year]);
 
-  const downloadPDF = () => {
-    window.open(
-      `http://localhost:5000/api/reports/monthly/pdf?month=${month}&year=${year}`,
-      "_blank"
-    );
-  };
+  useEffect(() => {
+    fetchStatus();
+    fetchAudit();
+  }, [fetchStatus, fetchAudit]);
 
-  const downloadExcel = () => {
-    window.open(
-      `http://localhost:5000/api/reports/monthly/excel?month=${month}&year=${year}`,
-      "_blank"
-    );
-  };
-
+  /* ================= ACTIONS ================= */
   const submitReport = async () => {
     try {
       await API.post("/reports/submit", {
-        report_type: "monthly",
+        report_type: REPORT_TYPE,
         month,
         year
       });
-      checkStatus();
+      alert("Report submitted successfully");
+      fetchStatus();
+      fetchAudit();
     } catch (err) {
       alert(err.response?.data?.error || "Submit failed");
     }
@@ -78,37 +77,35 @@ export default function Reports() {
   const approveReport = async () => {
     try {
       await API.post("/reports/approve", {
-        report_type: "monthly",
+        report_type: REPORT_TYPE,
         month,
         year
       });
-      checkStatus();
+      alert("Report approved successfully");
+      fetchStatus();
+      fetchAudit();
     } catch (err) {
-      alert(err.response?.data?.error || "Approval failed");
+      alert(err.response?.data?.error || "Approve failed");
     }
   };
 
   const lockReport = async () => {
     try {
       await API.post("/reports/status", {
-        report_type: "monthly",
+        report_type: REPORT_TYPE,
         month,
         year,
         status: "Locked"
       });
-      checkStatus();
+      alert("Report locked successfully");
+      fetchStatus();
+      fetchAudit();
     } catch (err) {
       alert(err.response?.data?.error || "Lock failed");
     }
   };
 
-  /* ================= AUTO LOAD ================= */
-  useEffect(() => {
-    checkStatus();
-  }, [checkStatus]);
-
   /* ================= UI ================= */
-
   return (
     <>
       <Navbar />
@@ -121,85 +118,60 @@ export default function Reports() {
             "January","February","March","April","May","June",
             "July","August","September","October","November","December"
           ].map(m => (
-            <option key={m}>{m}</option>
+            <option key={m} value={m}>{m}</option>
           ))}
         </select>
 
-        <input value={year} onChange={e => setYear(e.target.value)} />
+        <input
+          type="number"
+          value={year}
+          onChange={e => setYear(Number(e.target.value))}
+          style={{ marginLeft: "10px" }}
+        />
 
-        <br /><br />
+        <div style={{ marginTop: "10px" }}>
+          <button onClick={fetchStatus}>Refresh Status</button>
 
-        <button onClick={checkStatus}>Refresh Status</button>
+          {status === "Draft" && (roleId === 1 || roleId === 2 || roleId === 5) && (
+            <button onClick={submitReport}>Submit</button>
+          )}
 
-        <button
-          onClick={downloadPDF}
-          disabled={["Approved", "Locked"].includes(status)}
-        >
-          PDF
-        </button>
+          {status === "Submitted" && roleId === 1 && (
+            <button onClick={approveReport}>Approve</button>
+          )}
 
-        <button
-          onClick={downloadExcel}
-          disabled={["Approved", "Locked"].includes(status)}
-        >
-          Excel
-        </button>
+          {status === "Approved" && (roleId === 1 || roleId === 2) && (
+            <button onClick={lockReport}>Lock</button>
+          )}
+        </div>
 
-        {/* SUBMIT */}
-        {[1, 2, 5].includes(roleId) && status === "Draft" && (
-          <button onClick={submitReport}>Submit</button>
-        )}
+        <p>
+          Status: <strong>{status}</strong>
+        </p>
 
-        {/* APPROVE (SUPER ADMIN ONLY) */}
-        {roleId === 1 && status === "Submitted" && (
-          <button onClick={approveReport}>Approve</button>
-        )}
-
-        {/* LOCK */}
-        {[1, 2, 5].includes(roleId) && status === "Approved" && (
-          <button onClick={lockReport}>Lock</button>
-        )}
-
-        {/* STATUS BADGE */}
-        <h3>
-          Status:
-          <span
-            style={{
-              marginLeft: "10px",
-              padding: "4px 10px",
-              borderRadius: "6px",
-              color: "white",
-              background:
-                status === "Locked" ? "#c0392b" :
-                status === "Approved" ? "#27ae60" :
-                status === "Submitted" ? "#f39c12" :
-                "#7f8c8d"
-            }}
-          >
-            {status}
-          </span>
-        </h3>
-
-        {/* AUDIT TRAIL */}
+        {/* ================= AUDIT ================= */}
         {audit && (
-          <div style={{ marginTop: "20px", background: "#f4f6f7", padding: "15px" }}>
+          <div style={{ marginTop: "20px" }}>
             <h4>Audit Trail</h4>
 
             {audit.submitted_by && (
               <p>
-                📤 Submitted by <b>{audit.submitted_by}</b> on {audit.submitted_at}
+                Submitted by {audit.submitted_by} on{" "}
+                {new Date(audit.submitted_at).toLocaleString()}
               </p>
             )}
 
             {audit.approved_by && (
               <p>
-                ✅ Approved by <b>{audit.approved_by}</b> on {audit.approved_at}
+                Approved by {audit.approved_by} on{" "}
+                {new Date(audit.approved_at).toLocaleString()}
               </p>
             )}
 
             {audit.locked_by && (
               <p>
-                🔒 Locked by <b>{audit.locked_by}</b> on {audit.locked_at}
+                Locked by {audit.locked_by} on{" "}
+                {new Date(audit.locked_at).toLocaleString()}
               </p>
             )}
           </div>

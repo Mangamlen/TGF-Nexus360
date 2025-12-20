@@ -29,6 +29,7 @@ app.use("/api/expenses", expenseRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/beneficiaries", beneficiaryRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/activity", require("./routes/activity"));
 
 
 app.get("/", (req, res) => {

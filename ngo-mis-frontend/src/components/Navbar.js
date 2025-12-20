@@ -21,13 +21,26 @@ export default function Navbar() {
       }}
     >
       {[1, 2, 5].includes(roleId) && (
-        <Link style={linkStyle} to="/dashboard">Dashboard</Link>
+        <Link style={linkStyle} to="/dashboard">
+          Dashboard
+        </Link>
       )}
 
-      <Link style={linkStyle} to="/reports">Reports</Link>
+      <Link style={linkStyle} to="/reports">
+        Reports
+      </Link>
 
       {[1, 2].includes(roleId) && (
-        <Link style={linkStyle} to="/admin">Admin</Link>
+        <Link style={linkStyle} to="/admin">
+          Admin
+        </Link>
+      )}
+
+      {/* 🔐 Activity Log — Super Admin only */}
+      {roleId === 1 && (
+        <Link style={linkStyle} to="/activity">
+          Activity Log
+        </Link>
       )}
 
       <button onClick={logout} style={logoutStyle}>
