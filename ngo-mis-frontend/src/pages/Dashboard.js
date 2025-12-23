@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
-import Navbar from "../components/Navbar";
 import { getRoleId } from "../utils/auth";
 
 export default function Dashboard() {
@@ -31,7 +30,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <Navbar />
+      
 
       <div style={{ padding: "20px" }}>
         <h1>Dashboard</h1>

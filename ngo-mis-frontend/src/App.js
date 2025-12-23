@@ -2,45 +2,52 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Reports from "./pages/Reports";
+import Attendance from "./pages/Attendance";
 import ActivityLog from "./pages/ActivityLog";
 import PrivateRoute from "./components/PrivateRoute";
+import MainLayout from "./layouts/MainLayout";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+
         {/* Public */}
         <Route path="/" element={<Login />} />
 
-        {/* Dashboard */}
+        {/* Protected Layout */}
         <Route
-          path="/dashboard"
           element={
             <PrivateRoute>
-              <Dashboard />
+              <MainLayout />
             </PrivateRoute>
           }
-        />
+        >
+          {/* Admin + Manager */}
+          <Route
+            path="/dashboard"
+            element={
+              <PrivateRoute allowedRoles={[1, 2]}>
+                <Dashboard />
+              </PrivateRoute>
+            }
+          />
 
-        {/* Reports */}
-        <Route
-          path="/reports"
-          element={
-            <PrivateRoute>
-              <Reports />
-            </PrivateRoute>
-          }
-        />
+          {/* All logged-in users */}
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/attendance" element={<Attendance />} />
 
-        {/* 🔐 Activity Log (SUPER ADMIN ONLY) */}
-        <Route
-          path="/activity"
-          element={
-            <PrivateRoute allowedRoles={[1]}>
-              <ActivityLog />
-            </PrivateRoute>
-          }
-        />
+          {/* Super Admin only */}
+          <Route
+            path="/activity"
+            element={
+              <PrivateRoute allowedRoles={[1]}>
+                <ActivityLog />
+              </PrivateRoute>
+            }
+          />
+        </Route>
+
       </Routes>
     </BrowserRouter>
   );

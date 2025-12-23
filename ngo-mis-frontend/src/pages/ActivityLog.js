@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
-import Navbar from "../components/Navbar";
 
 export default function ActivityLog() {
   const [logs, setLogs] = useState([]);
@@ -24,7 +23,7 @@ export default function ActivityLog() {
 
   return (
     <>
-      <Navbar />
+  
 
       <div style={{ padding: "20px" }}>
         <h2>System Activity Log</h2>

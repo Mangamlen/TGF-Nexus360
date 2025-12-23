@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { jwtDecode } from "jwt-decode";
 import API from "../services/api";
-import Navbar from "../components/Navbar";
 
 export default function Reports() {
   /* ================= AUTH ================= */
@@ -108,7 +107,7 @@ export default function Reports() {
   /* ================= UI ================= */
   return (
     <>
-      <Navbar />
+     
 
       <div style={{ padding: "20px" }}>
         <h2>Monthly Reports</h2>

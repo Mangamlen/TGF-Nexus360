@@ -7,7 +7,7 @@ exports.verifyToken = (req, res, next) => {
     return res.status(403).json({ error: "No token provided" });
   }
 
-  const token = authHeader.split(" ")[1]; 
+  const token = authHeader.split(" ")[1];
 
   if (!token) {
     return res.status(403).json({ error: "Token missing" });
@@ -15,6 +15,10 @@ exports.verifyToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // ✅ NORMALIZE ROLE ID (CRITICAL FIX)
+    decoded.role_id = Number(decoded.role_id);
+
     req.user = decoded;
     next();
   } catch (error) {

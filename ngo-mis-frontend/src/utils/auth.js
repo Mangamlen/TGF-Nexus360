@@ -6,7 +6,7 @@ export const getRoleId = () => {
 
   try {
     const decoded = jwtDecode(token);
-    return decoded.role_id;
+    return decoded.role_id; 
   } catch {
     return null;
   }

@@ -1,5 +1,5 @@
 const express = require("express");
-const bcrypt = require("bcryptjs"); // ✅ FIXED
+const bcrypt = require("bcryptjs"); 
 const jwt = require("jsonwebtoken");
 const db = require("../db");
 
@@ -52,9 +52,12 @@ router.post("/login", (req, res) => {
     }
 
     const token = jwt.sign(
-  { id: user.id, role_id: user.role_id },
+  {
+    id: user.id,
+    role_id: user.role_id // 🔴 MUST EXIST
+  },
   process.env.JWT_SECRET,
-  { expiresIn: "8h" }
+  { expiresIn: process.env.JWT_EXPIRES_IN || "8h" }
 );
 
     res.json({

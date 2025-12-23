@@ -31,7 +31,7 @@ const apiLimiter = rateLimit({
 app.use("/api", apiLimiter);
 app.use("/api/auth", authRoutes);
 app.use("/api/hr", hrRoutes);
-app.use("/api/attendance", attendanceRoutes);
+app.use("/api/attendance", require("./routes/attendance"));
 app.use("/api/payroll", payrollRoutes);
 app.use("/api/leave", leaveRoutes);
 app.use("/api/expenses", expenseRoutes);
