@@ -4,79 +4,80 @@ const { verifyToken, allowRoles } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-router.post("/apply", verifyToken, (req, res) => {
-  const { employee_id, leave_type, start_date, end_date, reason } = req.body;
+/* ===========================
+   APPLY LEAVE (ALL USERS)
+=========================== */
+router.post("/", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
+  const userId = req.user.id;
+  const { leave_type, start_date, end_date, reason } = req.body;
 
-  const sql = `
-    INSERT INTO leave_requests 
-    (employee_id, leave_type, start_date, end_date, reason)
-    VALUES (?, ?, ?, ?, ?)
-  `;
+  if (!leave_type || !start_date || !end_date) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
 
-  db.query(sql, [employee_id, leave_type, start_date, end_date, reason], (err) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: "Leave request submitted successfully" });
-  });
+  db.query(
+    `INSERT INTO leave_requests 
+     (user_id, leave_type, start_date, end_date, reason)
+     VALUES (?, ?, ?, ?, ?)`,
+    [userId, leave_type, start_date, end_date, reason],
+    err => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: "Leave applied successfully" });
+    }
+  );
 });
 
-router.post("/approve/:id", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
-  const leave_id = req.params.id;
-
-  const sql = `
-    UPDATE leave_requests 
-    SET status = 'Approved'
-    WHERE id = ?
-  `;
-
-  db.query(sql, [leave_id], (err) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: "Leave approved successfully" });
-  });
-});
-
-router.post("/reject/:id", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
-  const leave_id = req.params.id;
-
-  const sql = `
-    UPDATE leave_requests 
-    SET status = 'Rejected'
-    WHERE id = ?
-  `;
-
-  db.query(sql, [leave_id], (err) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: "Leave rejected successfully" });
-  });
-});
-
+/* ===========================
+   EMPLOYEE → VIEW OWN LEAVES
+=========================== */
 router.get("/my", verifyToken, (req, res) => {
-  const employee_id = req.user.id;
-
-  const sql = `
-    SELECT * FROM leave_requests 
-    WHERE employee_id = ?
-    ORDER BY requested_on DESC
-  `;
-
-  db.query(sql, [employee_id], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
-  });
+  db.query(
+    `SELECT *
+     FROM leave_requests
+     WHERE user_id = ?
+     ORDER BY requested_on DESC`,
+    [req.user.id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
 });
 
-router.get("/all", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
-  const sql = `
-    SELECT lr.*, u.name
-    FROM leave_requests lr
-    JOIN employees e ON lr.employee_id = e.id
-    JOIN users u ON e.user_id = u.id
-    ORDER BY lr.requested_on DESC
-  `;
+/* ===========================
+   ADMIN / MANAGER → VIEW ALL
+=========================== */
+router.get("/", verifyToken, allowRoles([1, 2]), (req, res) => {
+  db.query(
+    `SELECT lr.*, u.name AS user_name
+     FROM leave_requests lr
+     JOIN users u ON lr.user_id = u.id
+     ORDER BY lr.requested_on DESC`,
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
+});
 
-  db.query(sql, (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
-  });
+/* ===========================
+   APPROVE / REJECT LEAVE
+=========================== */
+router.put("/:id", verifyToken, allowRoles([1, 2]), (req, res) => {
+  const { status } = req.body;
+
+  if (!["Approved", "Rejected"].includes(status)) {
+    return res.status(400).json({ error: "Invalid status" });
+  }
+
+  db.query(
+    "UPDATE leave_requests SET status=? WHERE id=?",
+    [status, req.params.id],
+    err => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: "Leave status updated" });
+    }
+  );
 });
 
 module.exports = router;

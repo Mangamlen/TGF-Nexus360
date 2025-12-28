@@ -1,77 +1,43 @@
 import { Link, useNavigate } from "react-router-dom";
-import { getRoleId } from "../utils/auth";
+import { getRoleId, clearAuth } from "../utils/auth";
 
 export default function Sidebar() {
   const navigate = useNavigate();
   const roleId = getRoleId();
 
   const logout = () => {
-    localStorage.removeItem("token");
+    clearAuth();
     navigate("/");
   };
 
   return (
-    <div style={styles.sidebar}>
-      <h3 style={styles.title}>TGF Nexus360</h3>
+    <div style={{ width: "220px", background: "#2c3e50", color: "#fff", padding: "20px" }}>
+      <h3>TGF Nexus360</h3>
 
-      {/* Dashboard – Admin & Manager only */}
-      {[1, 2].includes(roleId) && (
-        <Link style={styles.link} to="/dashboard">
-          Dashboard
-        </Link>
-      )}
+      {(roleId === 1 || roleId === 2) && <Link style={link} to="/dashboard">Dashboard</Link>}
+      <Link style={link} to="/reports">Reports</Link>
+      <Link style={link} to="/attendance">Attendance</Link>
+      <Link style={link} to="/leave">Leave</Link>
+      {roleId === 1 && <Link style={link} to="/activity">Activity Log</Link>}
 
-      {/* Reports – All logged-in users */}
-      <Link style={styles.link} to="/reports">
-        Reports
-      </Link>
-
-      {/* Attendance – All logged-in users */}
-      <Link style={styles.link} to="/attendance">
-        Attendance
-      </Link>
-
-      {/* Activity Log – Super Admin only */}
-      {roleId === 1 && (
-        <Link style={styles.link} to="/activity">
-          Activity Log
-        </Link>
-      )}
-
-      {/* Logout */}
-      <button onClick={logout} style={styles.logout}>
-        Logout
-      </button>
+      <button style={logoutBtn} onClick={logout}>Logout</button>
     </div>
   );
 }
 
-const styles = {
-  sidebar: {
-    width: "220px",
-    minHeight: "100vh",
-    background: "#2c3e50",
-    padding: "20px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px"
-  },
-  title: {
-    color: "#fff",
-    marginBottom: "20px"
-  },
-  link: {
-    color: "#ecf0f1",
-    textDecoration: "none",
-    fontWeight: "500"
-  },
-  logout: {
-    marginTop: "auto",
-    padding: "8px",
-    background: "#e74c3c",
-    color: "#fff",
-    border: "none",
-    cursor: "pointer",
-    fontWeight: "bold"
-  }
+const link = {
+  display: "block",
+  color: "#ecf0f1",
+  margin: "12px 0",
+  textDecoration: "none"
+};
+
+const logoutBtn = {
+  marginTop: "auto",
+  width: "100%",
+  padding: "10px",
+  background: "#e74c3c",
+  border: "none",
+  color: "#fff",
+  cursor: "pointer"
 };

@@ -33,7 +33,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/hr", hrRoutes);
 app.use("/api/attendance", require("./routes/attendance"));
 app.use("/api/payroll", payrollRoutes);
-app.use("/api/leave", leaveRoutes);
+app.use("/api/leave", require("./routes/leave"));
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/beneficiaries", beneficiaryRoutes);

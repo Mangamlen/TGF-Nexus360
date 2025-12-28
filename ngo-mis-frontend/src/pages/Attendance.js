@@ -19,7 +19,7 @@ export default function Attendance() {
   };
 
   /* =========================
-     LOAD HISTORY
+     LOAD ATTENDANCE HISTORY
   ========================= */
   const loadHistory = async () => {
     try {
@@ -62,6 +62,9 @@ export default function Attendance() {
     setLoading(false);
   };
 
+  /* =========================
+     INITIAL LOAD
+  ========================= */
   useEffect(() => {
     loadTodayStatus();
     loadHistory();
@@ -71,7 +74,7 @@ export default function Attendance() {
     <div>
       <h2>Attendance</h2>
 
-      {/* TODAY STATUS */}
+      {/* ================= TODAY STATUS ================= */}
       <div style={{ marginBottom: "20px" }}>
         {!status.check_in && (
           <button onClick={checkIn} disabled={loading}>
@@ -88,24 +91,44 @@ export default function Attendance() {
         {status.check_out && <p>Status: Checked Out</p>}
       </div>
 
-      {/* HISTORY TABLE */}
+      <hr style={{ margin: "30px 0" }} />
+
+      {/* ================= HISTORY TABLE ================= */}
       <h3>Attendance History</h3>
-      <table border="1" cellPadding="8">
+
+      <table border="1" cellPadding="8" width="100%">
         <thead>
           <tr>
             <th>Date</th>
-            <th>Check In</th>
-            <th>Check Out</th>
+            <th>Check-In</th>
+            <th>Check-Out</th>
             <th>Total Hours</th>
             <th>Status</th>
           </tr>
         </thead>
+
         <tbody>
-          {history.map((row) => (
-            <tr key={row.id}>
+          {history.length === 0 && (
+            <tr>
+              <td colSpan="5" align="center">
+                No records found
+              </td>
+            </tr>
+          )}
+
+          {history.map((row, index) => (
+            <tr key={index}>
               <td>{row.attendance_date}</td>
-              <td>{row.check_in || "-"}</td>
-              <td>{row.check_out || "-"}</td>
+              <td>
+                {row.check_in
+                  ? new Date(row.check_in).toLocaleTimeString()
+                  : "-"}
+              </td>
+              <td>
+                {row.check_out
+                  ? new Date(row.check_out).toLocaleTimeString()
+                  : "-"}
+              </td>
               <td>{row.total_hours || "-"}</td>
               <td>{row.status || "-"}</td>
             </tr>
