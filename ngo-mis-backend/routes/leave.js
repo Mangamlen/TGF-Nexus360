@@ -22,7 +22,7 @@ router.post("/", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
     [userId, leave_type, start_date, end_date, reason],
     err => {
       if (err) return res.status(500).json({ error: err.message });
-      res.json({ message: "Leave applied successfully" });
+      res.status(201).json({ message: "Leave applied successfully" });
     }
   );
 });

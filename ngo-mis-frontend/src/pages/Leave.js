@@ -33,11 +33,13 @@ export default function Leave() {
     }
 
     try {
-      await submitLeave(form);
+      const response = await submitLeave(form);
+      console.log("Leave submission response:", response);
       toast.success("Leave submitted successfully");
       setForm({ leave_type: "", start_date: "", end_date: "", reason: "" });
       loadLeaves();
     } catch (err) {
+      console.error("Leave submission error:", err);
       toast.error(err?.response?.data?.message || "Leave application failed");
     }
   };

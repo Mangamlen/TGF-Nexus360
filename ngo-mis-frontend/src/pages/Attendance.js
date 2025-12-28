@@ -1,5 +1,16 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
+import { toast } from "react-toastify";
+import { Button } from "../components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table";
 
 export default function Attendance() {
   const [status, setStatus] = useState({});
@@ -14,7 +25,8 @@ export default function Attendance() {
       const res = await API.get("/attendance/today");
       setStatus(res.data || {});
     } catch (err) {
-      console.error("Failed to load today status");
+      console.error("Failed to load today status", err);
+      toast.error("Failed to load today's status");
     }
   };
 
@@ -26,7 +38,8 @@ export default function Attendance() {
       const res = await API.get("/attendance/history");
       setHistory(res.data || []);
     } catch (err) {
-      console.error("Failed to load attendance history");
+      console.error("Failed to load attendance history", err);
+      toast.error("Failed to load attendance history");
     }
   };
 
@@ -39,9 +52,9 @@ export default function Attendance() {
       await API.post("/attendance/check-in");
       await loadTodayStatus();
       await loadHistory();
-      alert("Checked in successfully");
+      toast.success("Checked in successfully");
     } catch (err) {
-      alert(err.response?.data?.error || "Check-in failed");
+      toast.error(err.response?.data?.error || "Check-in failed");
     }
     setLoading(false);
   };
@@ -55,9 +68,9 @@ export default function Attendance() {
       await API.post("/attendance/check-out");
       await loadTodayStatus();
       await loadHistory();
-      alert("Checked out successfully");
+      toast.success("Checked out successfully");
     } catch (err) {
-      alert(err.response?.data?.error || "Check-out failed");
+      toast.error(err.response?.data?.error || "Check-out failed");
     }
     setLoading(false);
   };
@@ -71,70 +84,71 @@ export default function Attendance() {
   }, []);
 
   return (
-    <div>
-      <h2>Attendance</h2>
+    <div className="p-4">
+      <h2 className="text-2xl font-bold mb-4">Attendance</h2>
 
       {/* ================= TODAY STATUS ================= */}
-      <div style={{ marginBottom: "20px" }}>
+      <div className="mb-5">
         {!status.check_in && (
-          <button onClick={checkIn} disabled={loading}>
+          <Button onClick={checkIn} disabled={loading}>
             Check In
-          </button>
+          </Button>
         )}
 
         {status.check_in && !status.check_out && (
-          <button onClick={checkOut} disabled={loading}>
+          <Button onClick={checkOut} disabled={loading} variant="outline">
             Check Out
-          </button>
+          </Button>
         )}
 
-        {status.check_out && <p>Status: Checked Out</p>}
+        {status.check_out && <p className="text-lg">Status: Checked Out for today.</p>}
       </div>
 
-      <hr style={{ margin: "30px 0" }} />
+      <hr className="my-6" />
 
       {/* ================= HISTORY TABLE ================= */}
-      <h3>Attendance History</h3>
+      <h3 className="text-xl font-bold mb-3">Attendance History</h3>
 
-      <table border="1" cellPadding="8" width="100%">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Check-In</th>
-            <th>Check-Out</th>
-            <th>Total Hours</th>
-            <th>Status</th>
-          </tr>
-        </thead>
+      <Table>
+        <TableCaption>A list of your recent attendance records.</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date</TableHead>
+            <TableHead>Check-In</TableHead>
+            <TableHead>Check-Out</TableHead>
+            <TableHead>Total Hours</TableHead>
+            <TableHead>Status</TableHead>
+          </TableRow>
+        </TableHeader>
 
-        <tbody>
+        <TableBody>
           {history.length === 0 && (
-            <tr>
-              <td colSpan="5" align="center">
+            <TableRow>
+              <TableCell colSpan="5" className="text-center">
                 No records found
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           )}
 
           {history.map((row, index) => (
-            <tr key={index}>
-              <td>{row.attendance_date}</td>
-              <td>
+            <TableRow key={index}>
+              <TableCell className="font-medium">{row.attendance_date}</TableCell>
+              <TableCell>
                 {row.check_in
                   ? new Date(row.check_in).toLocaleTimeString()
                   : "-"}
-              </td>
-              <td>
+              </TableCell>
+              <TableCell>
                 {row.check_out
                   ? new Date(row.check_out).toLocaleTimeString()
                   : "-"}
-              </td>
-              <td>{row.total_hours || "-"}</td>
-              <td>{row.status || "-"}</td>
-            </tr>
+              </TableCell>
+              <TableCell>{row.total_hours || "-"}</TableCell>
+              <TableCell>{row.status || "-"}</TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }

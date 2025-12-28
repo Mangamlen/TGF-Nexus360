@@ -28,7 +28,7 @@ const apiLimiter = rateLimit({
   legacyHeaders: false
 });
 
-app.use("/api", apiLimiter);
+// app.use("/api", apiLimiter);
 app.use("/api/auth", authRoutes);
 app.use("/api/hr", hrRoutes);
 app.use("/api/attendance", require("./routes/attendance"));
