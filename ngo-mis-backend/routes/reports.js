@@ -1,4 +1,6 @@
 const express = require("express");
+const multer = require("multer");
+const path = require("path");
 const PDFDocument = require("pdfkit");
 const ExcelJS = require("exceljs");
 const db = require("../db");
@@ -8,6 +10,84 @@ const { isReportLocked } = require("../utils/reportLockGuard");
 const { logActivity } = require("../utils/activityLogger");
 
 const router = express.Router();
+
+// Multer storage configuration
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "ngo-mis-backend/uploads/");
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+
+const upload = multer({ storage });
+
+/* =========================================================
+   GET ALL REPORTS
+   ========================================================= */
+router.get("/", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
+  const q = `
+    SELECT
+      rs.id,
+      rs.report_type,
+      rs.month,
+      rs.year,
+      rs.status,
+      rs.submitted_at,
+      rs.approved_at,
+      rs.locked_at,
+      submitter.username AS submitted_by_username,
+      approver.username AS approved_by_username,
+      locker.username AS locked_by_username,
+      fu.file_path,
+      fu.id as file_id
+    FROM report_status AS rs
+    LEFT JOIN users AS submitter ON rs.submitted_by = submitter.id
+    LEFT JOIN users AS approver ON rs.approved_by = approver.id
+    LEFT JOIN users AS locker ON rs.locked_by = locker.id
+    LEFT JOIN file_uploads AS fu ON rs.file_id = fu.id
+    ORDER BY rs.year DESC, FIELD(rs.month, 'December', 'November', 'October', 'September', 'August', 'July', 'June', 'May', 'April', 'March', 'February', 'January')
+  `;
+
+  db.query(q, (err, data) => {
+    if (err) return res.status(500).json({ error: err.message });
+    return res.json(data);
+  });
+});
+
+/* =========================================================
+   DOWNLOAD REPORT FILE
+   ========================================================= */
+router.get("/download/:file_id", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
+  const { file_id } = req.params;
+
+  db.query(
+    "SELECT file_path FROM file_uploads WHERE id = ?",
+    [file_id],
+    (err, results) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      if (results.length === 0) {
+        return res.status(404).json({ error: "File not found." });
+      }
+      
+      const filePath = results[0].file_path;
+      
+      // Use res.download to handle the file transfer
+      res.download(filePath, (downloadErr) => {
+        if (downloadErr) {
+          console.error("Download Error:", downloadErr);
+          // Don't try to send another response if headers are already sent
+          if (!res.headersSent) {
+            res.status(500).json({ error: "Could not download the file." });
+          }
+        }
+      });
+    }
+  );
+});
 
 /* =========================================================
    📊 MONTHLY REPORT (JSON)
@@ -146,11 +226,15 @@ router.get("/monthly/pdf", verifyToken, allowRoles([1, 2, 5]), async (req, res) 
 /* =========================================================
    📤 SUBMIT REPORT
    ========================================================= */
-router.post("/submit", verifyToken, allowRoles([1, 2, 5]), async (req, res) => {
+router.post("/submit", upload.single("file"), verifyToken, allowRoles([1, 2, 5]), async (req, res) => {
   const { report_type, month, year } = req.body;
 
   if (!report_type || !month || !year) {
     return res.status(400).json({ error: "All fields required" });
+  }
+  
+  if (!req.file) {
+    return res.status(400).json({ error: "File is required" });
   }
 
   const locked = await isReportLocked(report_type, month, year);
@@ -160,30 +244,45 @@ router.post("/submit", verifyToken, allowRoles([1, 2, 5]), async (req, res) => {
     });
   }
 
+  const filePath = req.file.path;
+
   db.query(
-    `
-    INSERT INTO report_status
-      (report_type, month, year, status, submitted_by, submitted_at)
-    VALUES (?, ?, ?, 'Submitted', ?, NOW())
-    ON DUPLICATE KEY UPDATE
-      status='Submitted',
-      submitted_by=VALUES(submitted_by),
-      submitted_at=NOW()
-    `,
-    [report_type, month, year, req.user.id],
-    err => {
-      if (err) return res.status(500).json({ error: err.message });
+    "INSERT INTO file_uploads (user_id, file_path) VALUES (?, ?)",
+    [req.user.id, filePath],
+    (fileErr, fileResult) => {
+      if (fileErr) {
+        return res.status(500).json({ error: fileErr.message });
+      }
 
-      logActivity({
-        user_id: req.user.id,
-        action: "REPORT_SUBMITTED",
-        entity_type: "report",
-        entity_id: `${report_type}-${month}-${year}`,
-        description: `Submitted ${report_type} report for ${month} ${year}`,
-        req
-      });
+      db.query(
+        `
+        INSERT INTO report_status
+          (report_type, month, year, status, submitted_by, submitted_at, file_id)
+        VALUES (?, ?, ?, 'Submitted', ?, NOW(), ?)
+        ON DUPLICATE KEY UPDATE
+          status='Submitted',
+          submitted_by=VALUES(submitted_by),
+          submitted_at=NOW(),
+          file_id=VALUES(file_id)
+        `,
+        [report_type, month, year, req.user.id, fileResult.insertId],
+        (statusErr) => {
+          if (statusErr) {
+            return res.status(500).json({ error: statusErr.message });
+          }
 
-      res.json({ message: "Report submitted successfully" });
+          logActivity({
+            user_id: req.user.id,
+            action: "REPORT_SUBMITTED",
+            entity_type: "report",
+            entity_id: `${report_type}-${month}-${year}`,
+            description: `Submitted ${report_type} report for ${month} ${year}`,
+            req,
+          });
+
+          res.json({ message: "Report submitted successfully" });
+        }
+      );
     }
   );
 });

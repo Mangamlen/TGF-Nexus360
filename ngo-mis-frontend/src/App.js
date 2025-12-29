@@ -5,6 +5,9 @@ import Reports from "./pages/Reports";
 import Attendance from "./pages/Attendance";
 import Leave from "./pages/Leave";
 import ActivityLog from "./pages/ActivityLog";
+import Payroll from "./pages/Payroll";
+import StaffRegistration from "./pages/StaffRegistration";
+import MyProfile from "./pages/MyProfile";
 import PrivateRoute from "./components/PrivateRoute";
 import MainLayout from "./layouts/MainLayout";
 
@@ -34,7 +37,25 @@ function App() {
             }
           />
 
+          <Route
+            path="/payroll"
+            element={
+              <PrivateRoute allowedRoles={[1, 2]}>
+                <Payroll />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/staff-registration"
+            element={
+              <PrivateRoute allowedRoles={[1, 2, 5]}>
+                <StaffRegistration />
+              </PrivateRoute>
+            }
+          />
+
           {/* All logged-in users */}
+          <Route path="/my-profile" element={<MyProfile />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/attendance" element={<Attendance />} />
           <Route path="/leave" element={<Leave />} />
