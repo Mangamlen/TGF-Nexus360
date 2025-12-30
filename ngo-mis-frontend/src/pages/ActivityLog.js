@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
+import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "../components/ui/table";
+import { Badge } from "../components/ui/badge";
 
 export default function ActivityLog() {
   const [logs, setLogs] = useState([]);
@@ -22,50 +32,51 @@ export default function ActivityLog() {
   }, []);
 
   return (
-    <>
-  
-
-      <div style={{ padding: "20px" }}>
-        <h2>System Activity Log</h2>
-
-        {loading && <p>Loading...</p>}
-        {error && <p style={{ color: "red" }}>{error}</p>}
+    <Card className="m-4">
+      <CardHeader>
+        <CardTitle>System Activity Log</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loading && <p className="text-center py-4">Loading...</p>}
+        {error && <p className="text-center py-4 text-red-500">{error}</p>}
 
         {!loading && !error && (
-          <table border="1" cellPadding="8" cellSpacing="0" width="100%">
-            <thead style={{ background: "#f2f2f2" }}>
-              <tr>
-                <th>#</th>
-                <th>User</th>
-                <th>Action</th>
-                <th>Description</th>
-                <th>Date & Time</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>#</TableHead>
+                <TableHead>User</TableHead>
+                <TableHead>Action</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Date & Time</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {logs.length === 0 && (
-                <tr>
-                  <td colSpan="5" align="center">
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">
                     No activity found
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
 
               {logs.map((log, index) => (
-                <tr key={log.id}>
-                  <td>{index + 1}</td>
-                  <td>{log.user_name}</td>
-                  <td>{log.action}</td>
-                  <td>{log.description}</td>
-                  <td>
+                <TableRow key={log.id}>
+                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>{log.user_name}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{log.action}</Badge>
+                  </TableCell>
+                  <TableCell>{log.description}</TableCell>
+                  <TableCell>
                     {new Date(log.created_at).toLocaleString()}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
-      </div>
-    </>
+      </CardContent>
+    </Card>
   );
 }

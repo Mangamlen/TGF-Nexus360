@@ -8,6 +8,7 @@ import ActivityLog from "./pages/ActivityLog";
 import Payroll from "./pages/Payroll";
 import StaffRegistration from "./pages/StaffRegistration";
 import MyProfile from "./pages/MyProfile";
+import Expenses from "./pages/Expenses"; // Added import
 import PrivateRoute from "./components/PrivateRoute";
 import MainLayout from "./layouts/MainLayout";
 
@@ -59,6 +60,14 @@ function App() {
           <Route path="/reports" element={<Reports />} />
           <Route path="/attendance" element={<Attendance />} />
           <Route path="/leave" element={<Leave />} />
+          <Route
+            path="/expenses"
+            element={
+              <PrivateRoute allowedRoles={[1, 2, 5]}>
+                <Expenses />
+              </PrivateRoute>
+            }
+          />
 
           {/* Super Admin only */}
           <Route

@@ -136,8 +136,8 @@ router.get("/report/:month/:year", (req, res) => {
       e.emp_code,
       d.name AS department,
       g.title AS designation,
-      p.total_present_days,
-      p.salary,
+      p.total_present AS total_present_days,
+      p.net_salary AS salary,
       p.generated_on
     FROM payroll_records p
     JOIN employees e ON p.employee_id = e.id
@@ -147,10 +147,10 @@ router.get("/report/:month/:year", (req, res) => {
     WHERE p.month = ? AND p.year = ?
   `;
 
-  db.query(sql, [month, year], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
-  });
-});
+      db.query(sql, [month, year], (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        console.log('Payroll Report Details:', results); // Added for debugging
+        res.json(results);
+      });});
 
 module.exports = router;

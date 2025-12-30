@@ -14,7 +14,7 @@ const router = express.Router();
 // Multer storage configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "ngo-mis-backend/uploads/");
+    cb(null, "uploads/");
   },
   filename: (req, file, cb) => {
     cb(null, `${Date.now()}-${file.originalname}`);
@@ -37,9 +37,9 @@ router.get("/", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
       rs.submitted_at,
       rs.approved_at,
       rs.locked_at,
-      submitter.username AS submitted_by_username,
-      approver.username AS approved_by_username,
-      locker.username AS locked_by_username,
+      submitter.name AS submitted_by_username,
+      approver.name AS approved_by_username,
+      locker.name AS locked_by_username,
       fu.file_path,
       fu.id as file_id
     FROM report_status AS rs

@@ -11,6 +11,7 @@ import {
   LogOut,
   UserPlus, // Added
   User,     // Added
+  DollarSign, // Added
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
@@ -31,6 +32,7 @@ export default function Sidebar() {
     (roleId === 1 || roleId === 2) && { to: "/payroll", icon: <Landmark className="h-4 w-4" />, text: "Payroll" },
     { to: "/attendance", icon: <CalendarCheck className="h-4 w-4" />, text: "Attendance" },
     { to: "/leave", icon: <Plane className="h-4 w-4" />, text: "Leave" },
+    (roleId === 1 || roleId === 2 || roleId === 5) && { to: "/expenses", icon: <DollarSign className="h-4 w-4" />, text: "Expenses" },
     roleId === 1 && { to: "/activity", icon: <History className="h-4 w-4" />, text: "Activity Log" },
   ].filter(Boolean); // Filter out falsy values from conditional items
 
