@@ -1,8 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
-import { jwtDecode } from "jwt-decode";
 import { toast } from "react-toastify";
-import API from "../services/api";
-import { getRoleId } from "../utils/auth";
+import API from "../services/api"; // Import API
+import { getRoleId } from "../utils/auth"; // Import getRoleId
 
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
@@ -11,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Badge } from "../components/ui/badge";
-import { Download, Check, Lock, History, Loader2 } from "lucide-react";
+import { Download, Check, Lock, History, Loader2, Users, MapPin } from "lucide-react"; // Import Icons
+import * as dashboardService from "../services/dashboardService"; // Import dashboard service
 
 export default function Reports() {
   const roleId = getRoleId();
@@ -21,6 +21,8 @@ export default function Reports() {
   const [reports, setReports] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [beneficiaryStats, setBeneficiaryStats] = useState(null); // New state for beneficiary stats
+  const [isStatsLoading, setIsStatsLoading] = useState(true); // New state for stats loading
   
   const [dialogs, setDialogs] = useState({ submit: false, audit: false });
   const [selectedReport, setSelectedReport] = useState(null);
@@ -44,9 +46,24 @@ export default function Reports() {
     }
   }, []);
 
+  const fetchBeneficiaryStats = useCallback(async () => {
+    setIsStatsLoading(true);
+    try {
+      const data = await dashboardService.getBeneficiaryStats();
+      setBeneficiaryStats(data);
+    } catch (err) {
+      // Error handled by service
+    } finally {
+      setIsStatsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchReports();
-  }, [fetchReports]);
+    if (isAdmin || isManager || roleId === 5) { // Only fetch stats for relevant roles
+      fetchBeneficiaryStats();
+    }
+  }, [fetchReports, fetchBeneficiaryStats, isAdmin, isManager, roleId]);
 
   const handleFormChange = (e) => {
     const { name, value, files } = e.target;
@@ -221,7 +238,91 @@ export default function Reports() {
           </Table>
         </CardContent>
       </Card>
-      
+
+      {(isAdmin || isManager || roleId === 5) && ( // Only show this section for relevant roles
+        <Card>
+          <CardHeader>
+            <CardTitle>Beneficiary Demographics</CardTitle>
+            <CardDescription>Overall statistics and distribution of beneficiaries.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isStatsLoading ? (
+              <div className="flex justify-center items-center h-24">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2 text-lg">Loading beneficiary statistics...</span>
+              </div>
+            ) : beneficiaryStats ? (
+              <div className="grid gap-6">
+                {/* Summary Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Beneficiaries</CardTitle>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{beneficiaryStats.summary.total_beneficiaries || 0}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Male</CardTitle>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{beneficiaryStats.summary.total_male || 0}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Female</CardTitle>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{beneficiaryStats.summary.total_female || 0}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Trained</CardTitle>
+                      <Check className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{beneficiaryStats.summary.trained || 0}</div>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                {/* Village Distribution */}
+                <h3 className="text-lg font-semibold mt-4">Beneficiaries by Village</h3>
+                {beneficiaryStats.village_distribution && beneficiaryStats.village_distribution.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Village</TableHead>
+                        <TableHead className="text-right">Total Beneficiaries</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {beneficiaryStats.village_distribution.map((vd, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{vd.village}</TableCell>
+                          <TableCell className="text-right">{vd.total}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <p className="text-muted-foreground">No village distribution data available.</p>
+                )}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">No beneficiary demographic data available.</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Audit Trail Dialog */}
       <Dialog open={dialogs.audit} onOpenChange={(isOpen) => setDialogs(p => ({...p, audit: isOpen}))}>
           <DialogContent>

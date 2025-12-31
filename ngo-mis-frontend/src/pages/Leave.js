@@ -10,8 +10,45 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Badge } from "../components/ui/badge"; // Assuming a Badge component exists
 import { Textarea } from "../components/ui/textarea"; // Assuming a Textarea component exists
+import { DatePicker } from "../components/ui/date-picker"; // Import DatePicker
+import { Skeleton } from "../components/ui/skeleton"; // Import Skeleton
+import { format } from "date-fns"; // Import format for dates
 
 import { CalendarDays, Briefcase, Check, X, Hourglass } from "lucide-react";
+
+const TableSkeleton = ({ rows = 5, cols = 5 }) => (
+  <Table>
+    <TableHeader>
+      <TableRow>
+        {Array.from({ length: cols }).map((_, i) => (
+          <TableHead key={i}><Skeleton className="h-4 w-full" /></TableHead>
+        ))}
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      {Array.from({ length: rows }).map((_, i) => (
+        <TableRow key={i}>
+          {Array.from({ length: cols }).map((_, j) => (
+            <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+          ))}
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
+);
+
+const StatCardSkeleton = () => (
+  <Card>
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <Skeleton className="h-4 w-24" />
+      <Skeleton className="h-4 w-4" />
+    </CardHeader>
+    <CardContent>
+      <Skeleton className="h-8 w-1/2 mb-2" />
+      <Skeleton className="h-3 w-3/4" />
+    </CardContent>
+  </Card>
+);
 
 export default function Leave() {
   const roleId = getRoleId();
@@ -19,10 +56,11 @@ export default function Leave() {
 
   const [leaves, setLeaves] = useState([]);
   const [view, setView] = useState(isAdmin ? "team-requests" : "my-requests");
+  const [loading, setLoading] = useState(true); // Add loading state
   const [form, setForm] = useState({
     leave_type: "",
-    start_date: "",
-    end_date: "",
+    start_date: null, // Change to Date object for DatePicker
+    end_date: null,   // Change to Date object for DatePicker
     reason: ""
   });
   
@@ -31,17 +69,20 @@ export default function Leave() {
   const pendingRequests = leaves.filter(l => l.status === 'Pending').length;
 
   const loadLeaves = async () => {
+    setLoading(true); // Set loading true
     try {
       const data = isAdmin ? await getAllLeaves() : await getMyLeaves();
       setLeaves(data);
     } catch (err) {
       toast.error("Failed to load leave records");
+    } finally {
+      setLoading(false); // Set loading false
     }
   };
 
   useEffect(() => {
     loadLeaves();
-  }, [isAdmin]);
+  }, [isAdmin, view]); // Add view to dependency array to reload on view change
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -52,9 +93,13 @@ export default function Leave() {
     }
 
     try {
-      await submitLeave(form);
+      await submitLeave({
+        ...form,
+        start_date: format(form.start_date, "yyyy-MM-dd"), // Format date for API
+        end_date: format(form.end_date, "yyyy-MM-dd"),     // Format date for API
+      });
       toast.success("Leave submitted successfully");
-      setForm({ leave_type: "", start_date: "", end_date: "", reason: "" });
+      setForm({ leave_type: "", start_date: null, end_date: null, reason: "" }); // Reset to null
       loadLeaves();
       setView("my-requests"); // Switch back to requests view
     } catch (err) {
@@ -75,54 +120,65 @@ export default function Leave() {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'Approved':
-        return <Badge variant="success">Approved</Badge>;
+        return <Badge className="bg-status-approved text-primary-foreground hover:bg-status-approved/90">Approved</Badge>;
       case 'Rejected':
-        return <Badge variant="destructive">Rejected</Badge>;
+        return <Badge className="bg-status-rejected text-primary-foreground hover:bg-status-rejected/90">Rejected</Badge>;
+      case 'Pending':
+        return <Badge className="bg-status-pending text-primary-foreground hover:bg-status-pending/90">Pending</Badge>;
       default:
-        return <Badge variant="secondary">Pending</Badge>;
+        return <Badge variant="secondary">Unknown</Badge>;
     }
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="space-y-6">
       <h1 className="text-2xl font-bold">Leave Management</h1>
 
       {/* --- STATS CARDS --- */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Annual Leave Balance</CardTitle>
-            <CalendarDays className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{leaveBalance} Days</div>
-            <p className="text-xs text-muted-foreground">Remaining for this year</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
-            <Hourglass className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{isAdmin ? pendingRequests : leaves.filter(l => l.status === 'Pending').length}</div>
-            <p className="text-xs text-muted-foreground">{isAdmin ? 'Awaiting your approval' : 'Awaiting approval'}</p>
-          </CardContent>
-        </Card>
+        {loading ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : (
+          <>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Annual Leave Balance</CardTitle>
+                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{leaveBalance} Days</div>
+                <p className="text-xs text-muted-foreground">Remaining for this year</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
+                <Hourglass className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{pendingRequests}</div>
+                <p className="text-xs text-muted-foreground">{isAdmin ? 'Awaiting your approval' : 'Awaiting approval'}</p>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
 
       {/* --- VIEW TOGGLE --- */}
       <div className="flex space-x-2">
         {isAdmin ? (
-          <Button variant={view === 'team-requests' ? 'solid' : 'outline'} onClick={() => setView('team-requests')}>
+          <Button variant={view === 'team-requests' ? 'default' : 'outline'} onClick={() => setView('team-requests')}>
             Team Requests
           </Button>
         ) : (
           <>
-            <Button variant={view === 'my-requests' ? 'solid' : 'outline'} onClick={() => setView('my-requests')}>
+            <Button variant={view === 'my-requests' ? 'default' : 'outline'} onClick={() => setView('my-requests')}>
               My Requests
             </Button>
-            <Button variant={view === 'apply' ? 'solid' : 'outline'} onClick={() => setView('apply')}>
+            <Button variant={view === 'apply' ? 'default' : 'outline'} onClick={() => setView('apply')}>
               Apply for Leave
             </Button>
           </>
@@ -154,20 +210,18 @@ export default function Leave() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="start-date">Start Date</Label>
-                  <Input 
-                    id="start-date" 
-                    type="date" 
-                    value={form.start_date}
-                    onChange={e => setForm({ ...form, start_date: e.target.value })}
+                  <DatePicker 
+                    date={form.start_date}
+                    setDate={(date) => setForm({ ...form, start_date: date })}
+                    placeholder="Select start date"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="end-date">End Date</Label>
-                  <Input 
-                    id="end-date" 
-                    type="date" 
-                    value={form.end_date}
-                    onChange={e => setForm({ ...form, end_date: e.target.value })}
+                  <DatePicker 
+                    date={form.end_date}
+                    setDate={(date) => setForm({ ...form, end_date: date })}
+                    placeholder="Select end date"
                   />
                 </div>
               </div>
@@ -194,45 +248,47 @@ export default function Leave() {
             <CardDescription>A record of all leave requests.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {isAdmin && <TableHead>Employee</TableHead>}
-                  <TableHead>Type</TableHead>
-                  <TableHead>Start Date</TableHead>
-                  <TableHead>End Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  {isAdmin && <TableHead className="text-right">Actions</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {leaves.length > 0 ? leaves.map(l => (
-                  <TableRow key={l.id}>
-                    {isAdmin && <TableCell>{l.user_name}</TableCell>}
-                    <TableCell className="font-medium">{l.leave_type}</TableCell>
-                    <TableCell>{new Date(l.start_date).toLocaleDateString()}</TableCell>
-                    <TableCell>{new Date(l.end_date).toLocaleDateString()}</TableCell>
-                    <TableCell>{getStatusBadge(l.status)}</TableCell>
-                    {isAdmin && (
-                      <TableCell className="flex justify-end space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => handleStatusChange(l.id, 'Approved')} disabled={l.status !== 'Pending'}>
-                          <Check className="h-4 w-4 mr-1" /> Approve
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleStatusChange(l.id, 'Rejected')} disabled={l.status !== 'Pending'}>
-                           <X className="h-4 w-4 mr-1" /> Reject
-                        </Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                )) : (
+            {loading ? (
+              <TableSkeleton cols={isAdmin ? 6 : 4} />
+            ) : leaves.length > 0 ? (
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={isAdmin ? 6 : 4} className="h-24 text-center">
-                      No leave records found.
-                    </TableCell>
+                    {isAdmin && <TableHead>Employee</TableHead>}
+                    <TableHead>Type</TableHead>
+                    <TableHead>Start Date</TableHead>
+                    <TableHead>End Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    {isAdmin && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {leaves.map(l => (
+                    <TableRow key={l.id}>
+                      {isAdmin && <TableCell>{l.user_name}</TableCell>}
+                      <TableCell className="font-medium">{l.leave_type}</TableCell>
+                      <TableCell>{format(new Date(l.start_date), "PPP")}</TableCell>
+                      <TableCell>{format(new Date(l.end_date), "PPP")}</TableCell>
+                      <TableCell>{getStatusBadge(l.status)}</TableCell>
+                      {isAdmin && (
+                        <TableCell className="flex justify-end space-x-2">
+                          <Button variant="outline" size="sm" onClick={() => handleStatusChange(l.id, 'Approved')} disabled={l.status !== 'Pending'}>
+                            <Check className="h-4 w-4 mr-1" /> Approve
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => handleStatusChange(l.id, 'Rejected')} disabled={l.status !== 'Pending'}>
+                             <X className="h-4 w-4 mr-1" /> Reject
+                          </Button>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="flex items-center justify-center h-24 text-muted-foreground">
+                No leave records found.
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

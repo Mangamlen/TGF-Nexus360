@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import API from "../services/api";
 import { toast } from "react-toastify";
 import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card"; // Import Card components
 import {
   Table,
   TableBody,
@@ -20,10 +21,33 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "../components/ui/dialog"; // Assuming you have a Dialog component
+} from "../components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { DatePicker } from "../components/ui/date-picker"; // Import the new DatePicker
+import { Skeleton } from "../components/ui/skeleton"; // Import Skeleton
+import { format } from "date-fns";
 
-const ADMIN_ROLE_ID = 1; // Assuming role_id 1 is admin
-console.log("API Base URL from Attendance.js:", API.defaults.baseURL);
+const TableSkeleton = ({ rows = 5, cols = 5 }) => (
+  <Table>
+    <TableHeader>
+      <TableRow>
+        {Array.from({ length: cols }).map((_, i) => (
+          <TableHead key={i}><Skeleton className="h-4 w-full" /></TableHead>
+        ))}
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      {Array.from({ length: rows }).map((_, i) => (
+        <TableRow key={i}>
+          {Array.from({ length: cols }).map((_, j) => (
+            <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+          ))}
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
+);
+
 export default function Attendance() {
   const [status, setStatus] = useState({});
   const [history, setHistory] = useState([]);
@@ -43,16 +67,16 @@ export default function Attendance() {
     const minutes = date.getMinutes().toString().padStart(2, "0");
     return `${hours}:${minutes}`;
   };
-
-  const formatDateForInput = (dateString) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toISOString().split("T")[0]; // YYYY-MM-DD
-  };
-
-  const combineDateAndTime = (date, time) => {
-    if (!date || !time) return null;
-    return new Date(`${date}T${time}:00`); // Assuming time is HH:MM
+  
+  const combineDateAndTime = (dateObj, timeString) => {
+    if (!dateObj || !timeString) return null;
+    const [hours, minutes] = timeString.split(':');
+    const newDate = new Date(dateObj);
+    newDate.setHours(parseInt(hours, 10));
+    newDate.setMinutes(parseInt(minutes, 10));
+    newDate.setSeconds(0);
+    newDate.setMilliseconds(0);
+    return newDate;
   };
 
   /* =========================
@@ -60,7 +84,6 @@ export default function Attendance() {
   ========================= */
   const loadTodayStatus = async () => {
     try {
-      console.log("Attempting API call to (today):", API.getUri({ url: "/attendance/today" }));
       const res = await API.get("/attendance/today");
       setStatus(res.data || {});
     } catch (err) {
@@ -74,7 +97,6 @@ export default function Attendance() {
   ========================= */
   const loadHistory = async () => {
     try {
-      console.log("Attempting API call to (history):", API.getUri({ url: "/attendance/history" }));
       const res = await API.get("/attendance/history");
       setHistory(res.data || []);
     } catch (err) {
@@ -135,10 +157,9 @@ export default function Attendance() {
      MODAL EDIT HANDLERS (ADMIN)
   ========================= */
   const handleEditClick = (record) => {
-    // Convert date and time to formats suitable for input fields
     setEditingRecord({
       ...record,
-      date: formatDateForInput(record.attendance_date), // Use formatted date
+      date: record.attendance_date ? new Date(record.attendance_date) : null, // Date object for DatePicker
       check_in_time: formatTimeForInput(record.check_in),
       check_out_time: formatTimeForInput(record.check_out),
     });
@@ -148,6 +169,14 @@ export default function Attendance() {
   const handleModalChange = (e) => {
     const { name, value } = e.target;
     setEditingRecord((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleModalDateChange = (date) => {
+    setEditingRecord((prev) => ({ ...prev, date: date }));
+  };
+
+  const handleModalStatusChange = (value) => {
+    setEditingRecord((prev) => ({ ...prev, status: value }));
   };
 
   const handleCloseModal = () => {
@@ -164,7 +193,7 @@ export default function Attendance() {
     setLoading(true);
     try {
       const updatedData = {
-        date: editingRecord.date,
+        date: format(editingRecord.date, "yyyy-MM-dd"), // Format date for API
         check_in: combineDateAndTime(editingRecord.date, editingRecord.check_in_time),
         check_out: editingRecord.check_out_time
           ? combineDateAndTime(editingRecord.date, editingRecord.check_out_time)
@@ -190,162 +219,163 @@ export default function Attendance() {
   ========================= */
   useEffect(() => {
     const roleId = getRoleId();
-    if (roleId === ADMIN_ROLE_ID) {
+    if (roleId === 1) { // Assuming role_id 1 is admin
       setIsAdmin(true);
       loadAllAttendanceRecords();
     } else {
       loadTodayStatus();
       loadHistory();
     }
-
-    // === TEMPORARY DIAGNOSTIC FETCH CALL ===
-    console.log("Attempting direct fetch to: http://localhost:5000/api/attendance/today");
-    fetch("http://localhost:5000/api/attendance/today", {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}` // Include authorization if needed
-      }
-    })
-      .then(response => {
-        console.log("Direct fetch response status:", response.status);
-        if (!response.ok) {
-          return response.text().then(text => { throw new Error(text) });
-        }
-        return response.json();
-      })
-      .then(data => console.log("Direct fetch data:", data))
-      .catch(error => console.error("Direct fetch error:", error));
-    // ======================================
-
   }, []);
 
   return (
-    <div className="p-4">
+    <div className="space-y-6">
       <h2 className="text-2xl font-bold mb-4">Attendance</h2>
 
       {!isAdmin ? (
         <>
           {/* ================= TODAY STATUS (USER) ================= */}
-          <div className="mb-5">
-            {!status.check_in && (
-              <Button onClick={checkIn} disabled={loading}>
-                Check In
-              </Button>
-            )}
+          <Card>
+            <CardHeader>
+              <CardTitle>Your Today's Status</CardTitle>
+              <CardDescription>Manage your daily check-in and check-out.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-lg">
+                <strong>Check-In:</strong>{" "}
+                {status.check_in ? format(new Date(status.check_in), "p") : "N/A"}
+              </p>
+              <p className="text-lg">
+                <strong>Check-Out:</strong>{" "}
+                {status.check_out ? format(new Date(status.check_out), "p") : "N/A"}
+              </p>
+              <div className="flex gap-2">
+                {!status.check_in && (
+                  <Button onClick={checkIn} disabled={loading}>
+                    Check In
+                  </Button>
+                )}
 
-            {status.check_in && !status.check_out && (
-              <Button onClick={checkOut} disabled={loading} variant="outline">
-                Check Out
-              </Button>
-            )}
+                {status.check_in && !status.check_out && (
+                  <Button onClick={checkOut} disabled={loading} variant="outline">
+                    Check Out
+                  </Button>
+                )}
+              </div>
+              {status.check_out && <p className="text-muted-foreground">You are checked out for today.</p>}
+            </CardContent>
+          </Card>
 
-            {status.check_out && <p className="text-lg">Status: Checked Out for today.</p>}
-          </div>
-
-          <hr className="my-6" />
-
-          {/* ================= HISTORY TABLE (USER) ================= */}
-          <h3 className="text-xl font-bold mb-3">Attendance History</h3>
-
-          <Table>
-            <TableCaption>A list of your recent attendance records.</TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Check-In</TableHead>
-                <TableHead>Check-Out</TableHead>
-                <TableHead>Total Hours</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-
-            <TableBody>
-              {history.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan="5" className="text-center">
-                    No records found
-                  </TableCell>
-                </TableRow>
+          <Card>
+            <CardHeader>
+              <CardTitle>Attendance History</CardTitle>
+              <CardDescription>A list of your recent attendance records.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <TableSkeleton cols={5} />
+              ) : history.length === 0 ? (
+                <div className="flex items-center justify-center h-24 text-muted-foreground">
+                  No records found
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Check-In</TableHead>
+                      <TableHead>Check-Out</TableHead>
+                      <TableHead>Total Hours</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {history.map((row) => (
+                      <TableRow key={row.id}>
+                        <TableCell className="font-medium">{format(new Date(row.attendance_date), "PPP")}</TableCell>
+                        <TableCell>
+                          {row.check_in
+                            ? format(new Date(row.check_in), "p")
+                            : "-"}
+                        </TableCell>
+                        <TableCell>
+                          {row.check_out
+                            ? format(new Date(row.check_out), "p")
+                            : "-"}
+                        </TableCell>
+                        <TableCell>{row.total_hours || "-"}</TableCell>
+                        <TableCell>{row.status || "-"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
-
-              {history.map((row, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">{row.attendance_date}</TableCell>
-                  <TableCell>
-                    {row.check_in
-                      ? new Date(row.check_in).toLocaleTimeString()
-                      : "-"}
-                  </TableCell>
-                  <TableCell>
-                    {row.check_out
-                      ? new Date(row.check_out).toLocaleTimeString()
-                      : "-"}
-                  </TableCell>
-                  <TableCell>{row.total_hours || "-"}</TableCell>
-                  <TableCell>{row.status || "-"}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+            </CardContent>
+          </Card>
         </>
       ) : (
         <>
           {/* ================= ADMIN ATTENDANCE VIEW ================= */}
-          <h3 className="text-xl font-bold mb-3">All Attendance Records (Admin View)</h3>
-
-          <Table>
-            <TableCaption>All attendance records across employees.</TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Employee Code</TableHead>
-                <TableHead>Employee Name</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Check-In</TableHead>
-                <TableHead>Check-Out</TableHead>
-                <TableHead>Total Hours</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-
-            <TableBody>
-              {adminAttendanceRecords.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan="8" className="text-center">
-                    {loading ? "Loading..." : "No records found"}
-                  </TableCell>
-                </TableRow>
+          <Card>
+            <CardHeader>
+              <CardTitle>All Attendance Records (Admin View)</CardTitle>
+              <CardDescription>Manage and edit all employee attendance records.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <TableSkeleton cols={8} />
+              ) : adminAttendanceRecords.length === 0 ? (
+                <div className="flex items-center justify-center h-24 text-muted-foreground">
+                  No records found
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Employee Code</TableHead>
+                      <TableHead>Employee Name</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Check-In</TableHead>
+                      <TableHead>Check-Out</TableHead>
+                      <TableHead>Total Hours</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {adminAttendanceRecords.map((record) => (
+                      <TableRow key={record.id}>
+                        <TableCell>{record.emp_code}</TableCell>
+                        <TableCell>{record.employee_name}</TableCell>
+                        <TableCell className="font-medium">{format(new Date(record.attendance_date), "PPP")}</TableCell>
+                        <TableCell>
+                          {record.check_in
+                            ? format(new Date(record.check_in), "p")
+                            : "-"}
+                        </TableCell>
+                        <TableCell>
+                          {record.check_out
+                            ? format(new Date(record.check_out), "p")
+                            : "-"}
+                        </TableCell>
+                        <TableCell>{record.total_hours || "-"}</TableCell>
+                        <TableCell>{record.status || "-"}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditClick(record)}
+                          >
+                            Edit
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
-
-              {adminAttendanceRecords.map((record) => (
-                <TableRow key={record.id}>
-                  <TableCell>{record.emp_code}</TableCell>
-                  <TableCell>{record.employee_name}</TableCell>
-                  <TableCell className="font-medium">{record.attendance_date}</TableCell>
-                  <TableCell>
-                    {record.check_in
-                      ? new Date(record.check_in).toLocaleTimeString()
-                      : "-"}
-                  </TableCell>
-                  <TableCell>
-                    {record.check_out
-                      ? new Date(record.check_out).toLocaleTimeString()
-                      : "-"}
-                  </TableCell>
-                  <TableCell>{record.total_hours || "-"}</TableCell>
-                  <TableCell>{record.status || "-"}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditClick(record)}
-                    >
-                      Edit
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+            </CardContent>
+          </Card>
 
           {/* ================= EDIT ATTENDANCE MODAL ================= */}
           {isModalOpen && editingRecord && (
@@ -371,14 +401,13 @@ export default function Attendance() {
                     <Label htmlFor="date" className="text-right">
                       Date
                     </Label>
-                    <Input
-                      id="date"
-                      name="date"
-                      type="date"
-                      value={editingRecord.date}
-                      onChange={handleModalChange}
-                      className="col-span-3"
-                    />
+                    <div className="col-span-3">
+                      <DatePicker
+                        date={editingRecord.date}
+                        setDate={handleModalDateChange}
+                        placeholder="Select date"
+                      />
+                    </div>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="check_in_time" className="text-right">
@@ -410,18 +439,20 @@ export default function Attendance() {
                     <Label htmlFor="status" className="text-right">
                       Status
                     </Label>
-                    <select
-                      id="status"
-                      name="status"
+                    <Select
                       value={editingRecord.status}
-                      onChange={handleModalChange}
-                      className="col-span-3 p-2 border rounded-md"
+                      onValueChange={handleModalStatusChange}
                     >
-                      <option value="Present">Present</option>
-                      <option value="Absent">Absent</option>
-                      <option value="Half Day">Half Day</option>
-                      <option value="Leave">Leave</option>
-                    </select>
+                      <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Present">Present</SelectItem>
+                        <SelectItem value="Absent">Absent</SelectItem>
+                        <SelectItem value="Half Day">Half Day</SelectItem>
+                        <SelectItem value="Leave">Leave</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="gps_location" className="text-right">

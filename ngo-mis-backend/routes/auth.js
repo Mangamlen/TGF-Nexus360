@@ -51,14 +51,21 @@ router.post("/login", (req, res) => {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
+    let employee_id = null;
+    const [employeeRows] = await db.promise().query("SELECT id FROM employees WHERE user_id = ?", [user.id]);
+    if (employeeRows.length > 0) {
+      employee_id = employeeRows[0].id;
+    }
+
     const token = jwt.sign(
-  {
-    id: user.id,
-    role_id: user.role_id // 🔴 MUST EXIST
-  },
-  process.env.JWT_SECRET,
-  { expiresIn: process.env.JWT_EXPIRES_IN || "8h" }
-);
+      {
+        id: user.id,
+        role_id: user.role_id,
+        employee_id: employee_id // Add employee_id to token
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || "8h" }
+    );
 
     res.json({
       message: "Login successful",
@@ -67,7 +74,8 @@ router.post("/login", (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
-        role_id: user.role_id
+        role_id: user.role_id,
+        employee_id: employee_id // Add employee_id to user object
       }
     });
   });

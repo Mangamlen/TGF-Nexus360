@@ -15,6 +15,26 @@ export const registerStaff = async (formData) => {
   }
 };
 
+export const getAllEmployees = async () => {
+  try {
+    const { data } = await API.get("/hr/employees/all");
+    return data;
+  } catch (err) {
+    toast.error(err.response?.data?.error || "Failed to fetch employees.");
+    throw err;
+  }
+};
+
+export const getEmployeeById = async (id) => {
+  try {
+    const { data } = await API.get(`/hr/employees/${id}`);
+    return data;
+  } catch (err) {
+    toast.error(err.response?.data?.error || "Failed to fetch employee profile.");
+    throw err;
+  }
+};
+
 export const getProfile = async () => {
   try {
     const { data } = await API.get("/hr/employees/me");

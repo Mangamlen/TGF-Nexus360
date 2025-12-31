@@ -8,6 +8,8 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Loader2 } from "lucide-react";
 import API from "../services/api"; // To get base URL for photo display
+import { Skeleton } from "../components/ui/skeleton"; // Import Skeleton
+import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"; // Import Avatar
 
 export default function MyProfile() {
   const [profileData, setProfileData] = useState(null);
@@ -31,7 +33,7 @@ export default function MyProfile() {
         photo: null,
       });
       if (data.photo_path) {
-        setPhotoPreview(`${API.defaults.baseURL}/${data.photo_path.replace('ngo-mis-backend/', '')}`);
+        setPhotoPreview(`${API.defaults.baseURL}/${data.photo_path.replace(/\\/g, '/')}`);
       }
     } catch (error) {
       console.error("Failed to fetch profile:", error);
@@ -56,7 +58,7 @@ export default function MyProfile() {
       setPhotoPreview(URL.createObjectURL(file));
     } else {
       // If no new file selected, revert to existing photo or null
-      setPhotoPreview(profileData?.photo_path ? `${API.defaults.baseURL}/${profileData.photo_path.replace('ngo-mis-backend/', '')}` : null);
+      setPhotoPreview(profileData?.photo_path ? `${API.defaults.baseURL}/${profileData.photo_path.replace(/\\/g, '/')}` : null);
     }
   };
 
@@ -78,6 +80,7 @@ export default function MyProfile() {
 
     try {
       await employeeService.updateProfile(data);
+      toast.success("Profile updated successfully!");
       // Re-fetch profile to show updated data and clear new photo preview
       fetchProfile();
       setFormData(prev => ({ ...prev, photo: null })); // Clear photo from form state
@@ -90,9 +93,44 @@ export default function MyProfile() {
 
   if (isLoading) {
     return (
-      <div className="p-4 sm:p-6 lg:p-8 flex justify-center items-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2 text-lg">Loading profile...</span>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-7 w-40" />
+            <Skeleton className="h-4 w-60" />
+          </CardHeader>
+          <CardContent>
+            <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2 mb-4"><Skeleton className="h-6 w-48" /></h3>
+                <div className="space-y-2"><Label><Skeleton className="h-4 w-24" /></Label><Skeleton className="h-10 w-full" /></div>
+                <div className="space-y-2"><Label><Skeleton className="h-4 w-24" /></Label><Skeleton className="h-10 w-full" /></div>
+                <div className="space-y-2"><Label><Skeleton className="h-4 w-24" /></Label><Skeleton className="h-10 w-full" /></div>
+              </div>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2 mb-4"><Skeleton className="h-6 w-48" /></h3>
+                <div className="space-y-2"><Label><Skeleton className="h-4 w-24" /></Label><Skeleton className="h-10 w-full" /></div>
+                <div className="space-y-2"><Label><Skeleton className="h-4 w-24" /></Label><Skeleton className="h-10 w-full" /></div>
+                <div className="space-y-2"><Label><Skeleton className="h-4 w-24" /></Label><Skeleton className="h-10 w-full" /></div>
+                <div className="space-y-2"><Label><Skeleton className="h-4 w-24" /></Label><Skeleton className="h-10 w-full" /></div>
+                <div className="space-y-2"><Label><Skeleton className="h-4 w-24" /></Label><Skeleton className="h-10 w-full" /></div>
+              </div>
+              <div className="md:col-span-2 space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2 mb-4"><Skeleton className="h-6 w-48" /></h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2"><Label><Skeleton className="h-4 w-24" /></Label><Skeleton className="h-10 w-full" /></div>
+                  <div className="space-y-2"><Label><Skeleton className="h-4 w-24" /></Label><Skeleton className="h-10 w-full" /></div>
+                </div>
+                <div className="space-y-2">
+                  <Label><Skeleton className="h-4 w-24" /></Label>
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-20 w-20 rounded-full mt-2" />
+                </div>
+              </div>
+              <div className="md:col-span-2"><Skeleton className="h-10 w-40" /></div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     );
   }

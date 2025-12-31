@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import * as payrollService from "../services/payrollService";
+import { getRoleId, getEmployeeId } from "../utils/auth"; // Import getRoleId, getEmployeeId
 
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
@@ -24,6 +25,9 @@ export default function Payroll() {
     year: new Date().getFullYear(),
   });
 
+  const roleId = getRoleId(); // Get roleId
+  const employeeId = getEmployeeId(); // Get employeeId
+
   const fetchHistory = useCallback(async () => {
     setIsLoadingHistory(true);
     const data = await payrollService.getPayrollHistory();
@@ -31,9 +35,25 @@ export default function Payroll() {
     setIsLoadingHistory(false);
   }, []);
 
+  const fetchEmployeeHistory = useCallback(async () => {
+    setIsLoadingHistory(true);
+    try {
+      const data = await payrollService.getEmployeePayrollHistory(employeeId);
+      setHistory(data);
+    } catch (error) {
+      console.error("Failed to fetch employee payroll history:", error);
+      setHistory([]);
+    }
+    setIsLoadingHistory(false);
+  }, [employeeId]);
+
   useEffect(() => {
-    fetchHistory();
-  }, [fetchHistory]);
+    if (roleId === 1 || roleId === 2) {
+      fetchHistory();
+    } else if (roleId === 5 && employeeId) {
+      fetchEmployeeHistory();
+    }
+  }, [fetchHistory, fetchEmployeeHistory, roleId, employeeId]);
 
   const handleViewDetails = async (run) => {
     setSelectedRun(run);
@@ -61,6 +81,52 @@ export default function Payroll() {
     }
   };
 
+  // Employee Payroll History View
+  if (roleId === 5) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+        <h1 className="text-2xl font-bold">My Payroll History</h1>
+        <Card>
+          <CardHeader>
+            <CardTitle>Individual Payroll Records</CardTitle>
+            <CardDescription>Your personal history of payroll records.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Month</TableHead>
+                  <TableHead>Year</TableHead>
+                  <TableHead>Total Present</TableHead>
+                  <TableHead>Net Salary</TableHead>
+                  <TableHead>Generated On</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoadingHistory ? (
+                  <TableRow><TableCell colSpan={5} className="h-24 text-center">Loading your payroll history...</TableCell></TableRow>
+                ) : history.length === 0 ? (
+                  <TableRow><TableCell colSpan={5} className="h-24 text-center">No payroll records found for you.</TableCell></TableRow>
+                ) : (
+                  history.map((record, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{record.month}</TableCell>
+                      <TableCell>{record.year}</TableCell>
+                      <TableCell>{record.total_present}</TableCell>
+                      <TableCell>₹{Number(record.net_salary).toLocaleString('en-IN')}</TableCell>
+                      <TableCell>{new Date(record.generated_on).toLocaleDateString()}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Admin/Manager Payroll Management View
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="flex items-center justify-between">

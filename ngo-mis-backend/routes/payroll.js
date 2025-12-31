@@ -110,28 +110,53 @@ router.get("/history", verifyToken, allowRoles([1, 2]), (req, res) => {
   });
 });
 
-router.get("/slip/:employee_id/:month/:year", (req, res) => {
+router.get("/slip/:employee_id/:month/:year", async (req, res) => {
   const { employee_id, month, year } = req.params;
 
-  const sql = `
-    SELECT p.*, e.emp_code, u.name 
-    FROM payroll_records p
-    JOIN employees e ON p.employee_id = e.id
-    JOIN users u ON e.user_id = u.id
-    WHERE p.employee_id = ? AND p.month = ? AND p.year = ?
-  `;
+  try {
+    const sql = `
+      SELECT
+        pr.id AS payroll_record_id,
+        pr.month,
+        pr.total_present,
+        pr.net_salary,
+        pr.generated_on,
+        e.emp_code,
+        e.joining_date,
+        u.name AS employee_name,
+        u.email AS employee_email,
+        d.name AS department_name,
+        dg.title AS designation_title,
+        ss.basic,
+        ss.hra,
+        ss.allowance,
+        ss.deduction
+      FROM payroll_records pr
+      JOIN employees e ON pr.employee_id = e.id
+      JOIN users u ON e.user_id = u.id
+      JOIN departments d ON e.department_id = d.id
+      JOIN designations dg ON e.designation_id = dg.id
+      LEFT JOIN salary_structures ss ON e.id = ss.employee_id
+      WHERE pr.employee_id = ? AND pr.month = ? AND pr.year = ?;
+    `;
 
-  db.query(sql, [employee_id, month, year], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(result);
-  });
+    const [results] = await db.promise().query(sql, [employee_id, month, year]);
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: "Payslip not found." });
+    }
+
+    res.json(results[0]);
+  } catch (error) {
+    console.error("Error fetching payslip:", error);
+    res.status(500).json({ error: "An unexpected error occurred while fetching payslip." });
+  }
 });
-
 router.get("/report/:month/:year", (req, res) => {
   const { month, year } = req.params;
 
   const sql = `
-    SELECT 
+    SELECT
       u.name,
       e.emp_code,
       d.name AS department,
@@ -152,5 +177,54 @@ router.get("/report/:month/:year", (req, res) => {
         console.log('Payroll Report Details:', results); // Added for debugging
         res.json(results);
       });});
+
+router.get("/employee/history/:employee_id", verifyToken, async (req, res) => {
+  const { employee_id } = req.params;
+  const authUserId = req.user.id;
+  const authRoleId = req.user.role_id;
+
+  try {
+    // Check if the authenticated user is an admin/manager or the employee themselves
+    if (authRoleId === 1 || authRoleId === 2) {
+      // Admins and Managers can view any employee's history
+      const sql = `
+        SELECT
+          pr.month,
+          pr.year,
+          pr.total_present,
+          pr.net_salary,
+          pr.generated_on
+        FROM payroll_records pr
+        WHERE pr.employee_id = ?
+        ORDER BY pr.year DESC, FIELD(pr.month, 'December', 'November', 'October', 'September', 'August', 'July', 'June', 'May', 'April', 'March', 'February', 'January') DESC
+      `;
+      const [results] = await db.promise().query(sql, [employee_id]);
+      return res.json(results);
+    } else {
+      // For other roles, ensure they can only view their own history
+      const [employeeDetails] = await db.promise().query("SELECT id FROM employees WHERE user_id = ? AND id = ?", [authUserId, employee_id]);
+      if (employeeDetails.length === 0) {
+        return res.status(403).json({ error: "Forbidden: You can only view your own payroll history." });
+      }
+
+      const sql = `
+        SELECT
+          pr.month,
+          pr.year,
+          pr.total_present,
+          pr.net_salary,
+          pr.generated_on
+        FROM payroll_records pr
+        WHERE pr.employee_id = ?
+        ORDER BY pr.year DESC, FIELD(pr.month, 'December', 'November', 'October', 'September', 'August', 'July', 'June', 'May', 'April', 'March', 'February', 'January') DESC
+      `;
+      const [results] = await db.promise().query(sql, [employee_id]);
+      return res.json(results);
+    }
+  } catch (error) {
+    console.error("Error fetching employee payroll history:", error);
+    res.status(500).json({ error: "An unexpected error occurred while fetching employee payroll history." });
+  }
+});
 
 module.exports = router;

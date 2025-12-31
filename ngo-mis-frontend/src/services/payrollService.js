@@ -32,6 +32,36 @@ export const getPayrollHistory = async () => {
 };
 
 /**
+ * Fetches a specific employee's payslip for a given month and year.
+ * @param {number} employeeId The ID of the employee.
+ * @param {string} month The month of the payslip (e.g., "December").
+ * @param {number} year The year of the payslip.
+ */
+export const getEmployeePayslip = async (employeeId, month, year) => {
+  try {
+    const { data } = await API.get(`/payroll/slip/${employeeId}/${month}/${year}`);
+    return data;
+  } catch (err) {
+    toast.error(err.response?.data?.error || "Failed to fetch payslip.");
+    throw err;
+  }
+};
+
+/**
+ * Fetches the payroll history for a specific employee.
+ * @param {number} employeeId The ID of the employee.
+ */
+export const getEmployeePayrollHistory = async (employeeId) => {
+  try {
+    const { data } = await API.get(`/payroll/employee/history/${employeeId}`);
+    return data;
+  } catch (err) {
+    toast.error(err.response?.data?.error || "Failed to fetch employee payroll history.");
+    throw err;
+  }
+};
+
+/**
  * Fetches the detailed report for a specific payroll run.
  * @param {string} month The month of the report.
  * @param {number} year The year of the report.

@@ -1,15 +1,21 @@
 import Sidebar from "../components/Sidebar";
+import Header from "../components/Header"; // Import Header
+import Breadcrumb from "../components/Breadcrumb"; // Import Breadcrumb
 import { Outlet } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function MainLayout() {
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
+    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <Sidebar />
-      <main style={{ marginLeft: "220px", width: "calc(100% - 260px)", padding: "20px", overflowY: "auto" }}>
-        <Outlet />
-      </main>
+      <div className="flex flex-col">
+        <Header />
+        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 overflow-auto">
+          <Breadcrumb /> {/* Add Breadcrumb here */}
+          <Outlet />
+        </main>
+      </div>
       <ToastContainer
         position="bottom-right"
         autoClose={5000}
@@ -20,6 +26,7 @@ export default function MainLayout() {
         pauseOnFocusLoss
         draggable
         pauseOnHover
+        theme="light"
       />
     </div>
   );

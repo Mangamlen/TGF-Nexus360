@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../co
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"; // Import Select components
+import { Skeleton } from "../components/ui/skeleton"; // Import Skeleton
 
 export default function StaffRegistration() {
   const [formData, setFormData] = useState({
@@ -27,6 +29,7 @@ export default function StaffRegistration() {
   const [designations, setDesignations] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [isDropdownsLoading, setIsDropdownsLoading] = useState(true); // New loading state for dropdowns
 
   // Hardcoded roles for dropdown
   const roles = [
@@ -37,6 +40,7 @@ export default function StaffRegistration() {
   ];
 
   const fetchDropdownData = useCallback(async () => {
+    setIsDropdownsLoading(true); // Set loading true
     try {
       const [deps, desigs] = await Promise.all([
         employeeService.getDepartments(),
@@ -45,11 +49,16 @@ export default function StaffRegistration() {
       setDepartments(deps);
       setDesignations(desigs);
       // Set default values if available
-      if (deps.length > 0) setFormData(prev => ({ ...prev, department_id: deps[0].id }));
-      if (desigs.length > 0) setFormData(prev => ({ ...prev, designation_id: desigs[0].id }));
+      setFormData(prev => ({ 
+        ...prev, 
+        department_id: deps.length > 0 ? deps[0].id.toString() : "", // Convert to string for Select
+        designation_id: desigs.length > 0 ? desigs[0].id.toString() : "" // Convert to string for Select
+      }));
     } catch (error) {
       console.error("Failed to fetch dropdown data:", error);
       toast.error("Failed to load department or designation data.");
+    } finally {
+      setIsDropdownsLoading(false); // Set loading false
     }
   }, []);
 
@@ -59,6 +68,10 @@ export default function StaffRegistration() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (name, value) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -85,10 +98,13 @@ export default function StaffRegistration() {
 
     try {
       await employeeService.registerStaff(data);
+      toast.success("Staff registered successfully!");
       // Reset form on success
       setFormData({
-        name: "", email: "", password: "", role_id: "3", emp_code: "", department_id: departments[0]?.id || "",
-        designation_id: designations[0]?.id || "", joining_date: "", salary: "", phone: "", address: "", photo: null,
+        name: "", email: "", password: "", role_id: "3", emp_code: "", 
+        department_id: departments[0]?.id.toString() || "", // Convert to string for Select
+        designation_id: designations[0]?.id.toString() || "", // Convert to string for Select
+        joining_date: "", salary: "", phone: "", address: "", photo: null,
       });
       setPhotoPreview(null);
     } catch (error) {
@@ -99,7 +115,7 @@ export default function StaffRegistration() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Staff Registration</CardTitle>
@@ -124,11 +140,20 @@ export default function StaffRegistration() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="role_id">Role</Label>
-                <select id="role_id" name="role_id" value={formData.role_id} onChange={handleChange} className="w-full h-10 border rounded-md px-2" required>
-                  {roles.map(role => (
-                    <option key={role.id} value={role.id}>{role.name}</option>
-                  ))}
-                </select>
+                {isDropdownsLoading ? (
+                    <Skeleton className="h-10 w-full" />
+                ) : (
+                    <Select value={formData.role_id} onValueChange={(value) => handleSelectChange("role_id", value)}>
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {roles.map(role => (
+                                <SelectItem key={role.id} value={role.id.toString()}>{role.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                )}
               </div>
             </div>
 
@@ -141,19 +166,37 @@ export default function StaffRegistration() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="department_id">Department</Label>
-                <select id="department_id" name="department_id" value={formData.department_id} onChange={handleChange} className="w-full h-10 border rounded-md px-2" required>
-                  {departments.map(dep => (
-                    <option key={dep.id} value={dep.id}>{dep.name}</option>
-                  ))}
-                </select>
+                {isDropdownsLoading ? (
+                    <Skeleton className="h-10 w-full" />
+                ) : (
+                    <Select value={formData.department_id} onValueChange={(value) => handleSelectChange("department_id", value)}>
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select a department" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {departments.map(dep => (
+                                <SelectItem key={dep.id} value={dep.id.toString()}>{dep.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="designation_id">Designation</Label>
-                <select id="designation_id" name="designation_id" value={formData.designation_id} onChange={handleChange} className="w-full h-10 border rounded-md px-2" required>
-                  {designations.map(desig => (
-                    <option key={desig.id} value={desig.id}>{desig.title}</option>
-                  ))}
-                </select>
+                {isDropdownsLoading ? (
+                    <Skeleton className="h-10 w-full" />
+                ) : (
+                    <Select value={formData.designation_id} onValueChange={(value) => handleSelectChange("designation_id", value)}>
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select a designation" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {designations.map(desig => (
+                                <SelectItem key={desig.id} value={desig.id.toString()}>{desig.title}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="joining_date">Joining Date</Label>

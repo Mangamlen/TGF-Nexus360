@@ -20,8 +20,33 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from "../components/ui/label";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
+import { DatePicker } from "../components/ui/date-picker"; // Import DatePicker
+import { Skeleton } from "../components/ui/skeleton"; // Import Skeleton
 import expenseService from "../services/expenseService"; // Import the service
 import { getRoleId } from "../utils/auth";
+import { toast } from "react-toastify"; // Import toast for consistent error handling
+import { format } from "date-fns"; // Import format for dates
+
+const TableSkeleton = ({ rows = 5, cols = 8 }) => (
+  <Table>
+    <TableHeader>
+      <TableRow>
+        {Array.from({ length: cols }).map((_, i) => (
+          <TableHead key={i}><Skeleton className="h-4 w-full" /></TableHead>
+        ))}
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      {Array.from({ length: rows }).map((_, i) => (
+        <TableRow key={i}>
+          {Array.from({ length: cols }).map((_, j) => (
+            <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+          ))}
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
+);
 
 export default function Expenses() {
   const roleId = getRoleId();
@@ -35,7 +60,7 @@ export default function Expenses() {
   const [formData, setFormData] = useState({
     category: "",
     amount: "",
-    expense_date: "",
+    expense_date: null, // Change to Date object for DatePicker
     description: "",
     receipt_url: "",
   });
@@ -43,14 +68,12 @@ export default function Expenses() {
   const fetchExpenses = useCallback(async () => {
     setLoading(true);
     try {
-      // Assuming a user can only see their own expenses, or an admin can see all
-      // For simplicity, let's assume `getAllExpenses` is for admin/manager, and `getMyExpenses` for regular users.
-      // We might need to check user role here in a real app.
       const res = await expenseService.getAllExpenses(); // Or getMyExpenses() based on role
       setExpenses(res.data);
     } catch (err) {
       console.error("Failed to fetch expenses:", err);
       setError("Failed to load expenses.");
+      toast.error("Failed to load expenses."); // Consistent toast notification
     } finally {
       setLoading(false);
     }
@@ -65,12 +88,16 @@ export default function Expenses() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleDateChange = (date) => {
+    setFormData((prev) => ({ ...prev, expense_date: date }));
+  };
+
   const openAddModal = () => {
     setCurrentExpense(null);
     setFormData({
       category: "",
       amount: "",
-      expense_date: "",
+      expense_date: null,
       description: "",
       receipt_url: "",
     });
@@ -82,7 +109,7 @@ export default function Expenses() {
     setFormData({
       category: expense.category,
       amount: expense.amount,
-      expense_date: expense.expense_date.split('T')[0], // Format date for input type="date"
+      expense_date: expense.expense_date ? new Date(expense.expense_date) : null, // Date object for DatePicker
       description: expense.description,
       receipt_url: expense.receipt_url,
     });
@@ -91,21 +118,31 @@ export default function Expenses() {
 
   const closeModal = () => {
     setIsModalOpen(false);
+    setCurrentExpense(null); // Clear current expense on close
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (currentExpense) {
-        await expenseService.updateExpense(currentExpense.id, formData);
+        await expenseService.updateExpense(currentExpense.id, {
+          ...formData,
+          expense_date: formData.expense_date ? format(formData.expense_date, "yyyy-MM-dd") : null,
+        });
+        toast.success("Expense updated successfully!");
       } else {
-        await expenseService.submitExpense(formData);
+        await expenseService.submitExpense({
+          ...formData,
+          expense_date: formData.expense_date ? format(formData.expense_date, "yyyy-MM-dd") : null,
+        });
+        toast.success("Expense submitted successfully!");
       }
       closeModal();
       fetchExpenses(); // Refresh the list
     } catch (err) {
       console.error("Error submitting expense:", err);
       setError("Failed to save expense.");
+      toast.error(err.response?.data?.error || "Failed to save expense.");
     }
   };
 
@@ -113,10 +150,12 @@ export default function Expenses() {
     if (window.confirm("Are you sure you want to delete this expense?")) {
       try {
         await expenseService.deleteExpense(id);
+        toast.success("Expense deleted successfully!");
         fetchExpenses(); // Refresh the list
       } catch (err) {
         console.error("Error deleting expense:", err);
         setError("Failed to delete expense.");
+        toast.error("Failed to delete expense.");
       }
     }
   };
@@ -125,94 +164,99 @@ export default function Expenses() {
     try {
       if (status === "Approved") {
         await expenseService.approveExpense(id);
+        toast.success("Expense approved!");
       } else {
         await expenseService.rejectExpense(id);
+        toast.success("Expense rejected!");
       }
       fetchExpenses(); // Refresh the list
     } catch (err) {
       console.error(`Error ${status}ing expense:`, err);
       setError(`Failed to ${status} expense.`);
+      toast.error(`Failed to ${status} expense.`);
     }
   };
 
-  const getStatusVariant = (status) => {
+  const getStatusBadge = (status) => {
     switch (status) {
       case "Approved":
-        return "default";
+        return <Badge className="bg-status-approved text-primary-foreground hover:bg-status-approved/90">{status}</Badge>;
       case "Pending":
-        return "outline";
+        return <Badge className="bg-status-pending text-primary-foreground hover:bg-status-pending/90">{status}</Badge>;
       case "Rejected":
-        return "destructive";
+        return <Badge className="bg-status-rejected text-primary-foreground hover:bg-status-rejected/90">{status}</Badge>;
       default:
-        return "secondary";
+        return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
   return (
-    <Card className="m-4">
-      <CardHeader>
-        <CardTitle>Expense Management</CardTitle>
-        <CardDescription>Manage all employee expenses.</CardDescription>
-        <Button onClick={openAddModal} className="mt-2">Add New Expense</Button>
-      </CardHeader>
-      <CardContent>
-        {loading && <p className="text-center py-4">Loading expenses...</p>}
-        {error && <p className="text-center py-4 text-red-500">{error}</p>}
-
-        {!loading && !error && (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {expenses.length === 0 ? (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Expense Management</h1>
+        <Button onClick={openAddModal}>Add New Expense</Button>
+      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>All Expenses</CardTitle>
+          <CardDescription>A list of all submitted expenses.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <TableSkeleton cols={8} />
+          ) : error ? (
+            <div className="flex items-center justify-center h-24 text-destructive">
+              {error}
+            </div>
+          ) : expenses.length === 0 ? (
+            <div className="flex items-center justify-center h-24 text-muted-foreground">
+              No expenses found.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center">
-                      No expenses found.
-                    </TableCell>
+                    <TableHead>ID</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ) : (
-                  expenses.map((expense) => (
+                </TableHeader>
+                <TableBody>
+                  {expenses.map((expense) => (
                     <TableRow key={expense.id}>
                       <TableCell>{expense.id}</TableCell>
                       <TableCell>{expense.user_name}</TableCell>
                       <TableCell>{expense.category}</TableCell>
-                      <TableCell>${parseFloat(expense.amount).toFixed(2)}</TableCell>
-                      <TableCell>{expense.expense_date}</TableCell>
+                      <TableCell>₹{parseFloat(expense.amount).toLocaleString('en-IN')}</TableCell>
+                      <TableCell>{format(new Date(expense.expense_date), "PPP")}</TableCell>
                       <TableCell className="max-w-xs truncate">{expense.description}</TableCell>
                       <TableCell>
-                        <Badge variant={getStatusVariant(expense.status)}>
-                          {expense.status}
-                        </Badge>
+                        {getStatusBadge(expense.status)}
                       </TableCell>
                       <TableCell className="flex space-x-2">
                         <Button variant="outline" size="sm" onClick={() => openEditModal(expense)}>Edit</Button>
                         <Button variant="destructive" size="sm" onClick={() => handleDelete(expense.id)}>Delete</Button>
                         {expense.status === "Pending" && (isAdmin || isManager) && (
                           <>
-                            <Button size="sm" onClick={() => handleApproveReject(expense.id, "Approved")}>Approve</Button>
+                            <Button variant="default" size="sm" onClick={() => handleApproveReject(expense.id, "Approved")}>Approve</Button>
                             <Button variant="secondary" size="sm" onClick={() => handleApproveReject(expense.id, "Rejected")}>Reject</Button>
                           </>
                         )}
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </CardContent>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Add/Edit Expense Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -255,15 +299,13 @@ export default function Expenses() {
               <Label htmlFor="expense_date" className="text-right">
                 Date
               </Label>
-              <Input
-                id="expense_date"
-                name="expense_date"
-                type="date"
-                value={formData.expense_date}
-                onChange={handleInputChange}
-                className="col-span-3"
-                required
-              />
+              <div className="col-span-3">
+                <DatePicker
+                  date={formData.expense_date}
+                  setDate={handleDateChange}
+                  placeholder="Select expense date"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="description" className="text-right">
@@ -295,6 +337,6 @@ export default function Expenses() {
           </form>
         </DialogContent>
       </Dialog>
-    </Card>
+    </div>
   );
 }

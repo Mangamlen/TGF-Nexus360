@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import API from "../services/api";
+import * as dashboardService from "../services/dashboardService"; // Updated import
 import { getRoleId } from "../utils/auth";
 import {
   Card,
@@ -10,28 +10,87 @@ import {
 } from "../components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import {
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from "recharts";
+import {
   Users,
   Building,
   Hourglass,
-  Beef,
   DollarSign,
   Briefcase,
-  GitPullRequest,
   CheckCircle,
   TrendingUp,
   MapPin,
   PieChart,
-  CircleDollarSign,
-  CalendarDays,
-  Gauge,
   User,
-  Activity,
-  Award,
   FlaskConical,
   Loader2,
   Plane,
+  Award
 } from "lucide-react";
-import { toast } from "react-toastify";
+import { Skeleton } from "../components/ui/skeleton"; // Import Skeleton
+
+// Colors for the pie chart
+const COLORS = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b"];
+
+const StatCard = ({ title, value, icon, description }) => (
+  <Card>
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-sm font-medium">{title}</CardTitle>
+      {icon}
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl font-bold">{value}</div>
+      {description && (
+        <p className="text-xs text-muted-foreground">{description}</p>
+      )}
+    </CardContent>
+  </Card>
+);
+
+const StatCardSkeleton = () => (
+  <Card>
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <Skeleton className="h-4 w-24" />
+      <Skeleton className="h-4 w-4" />
+    </CardHeader>
+    <CardContent>
+      <Skeleton className="h-8 w-1/2 mb-2" />
+      <Skeleton className="h-3 w-3/4" />
+    </CardContent>
+  </Card>
+);
+
+const TableSkeleton = ({ rows = 5, cols = 3 }) => (
+  <Table>
+    <TableHeader>
+      <TableRow>
+        {Array.from({ length: cols }).map((_, i) => (
+          <TableHead key={i}><Skeleton className="h-4 w-full" /></TableHead>
+        ))}
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      {Array.from({ length: rows }).map((_, i) => (
+        <TableRow key={i}>
+          {Array.from({ length: cols }).map((_, j) => (
+            <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+          ))}
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
+);
 
 export default function Dashboard() {
   const roleId = getRoleId();
@@ -44,46 +103,49 @@ export default function Dashboard() {
     hrSummary: null,
     mySummary: null,
     projectStats: null,
-    attendanceTrend: null,
-    honeySummary: null,
     topHoneyProducers: null,
     topBeneficiaries: null,
+    beneficiariesByVillage: [],
+    honeyTrend: [],
   });
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const newData = {};
-
       if (isAdminOrManager) {
-        const [adminRes, projectRes, topProducersRes, topBeneficiariesRes] =
-          await Promise.all([
-            API.get("/dashboard/admin-summary"),
-            API.get("/dashboard/project-stats"),
-            API.get("/dashboard/top-honey-producers?limit=5"),
-            API.get("/dashboard/top-beneficiaries?limit=5"),
-          ]);
-        newData.adminSummary = adminRes.data;
-        newData.projectStats = projectRes.data;
-        newData.topHoneyProducers = topProducersRes.data;
-        newData.topBeneficiaries = topBeneficiariesRes.data;
+        const [adminRes, projectRes, topProducersRes, topBeneficiariesRes, villageData, honeyTrendData] = await Promise.all([
+          dashboardService.getAdminSummary(),
+          dashboardService.getProjectStats(),
+          dashboardService.getTopHoneyProducers(),
+          dashboardService.getTopBeneficiaries(),
+          dashboardService.getBeneficiariesByVillage(),
+          dashboardService.getHoneyTrend(),
+        ]);
+
+        setDashboardData(prev => ({
+          ...prev,
+          adminSummary: adminRes,
+          projectStats: projectRes,
+          topHoneyProducers: topProducersRes,
+          topBeneficiaries: topBeneficiariesRes,
+          beneficiariesByVillage: villageData,
+          honeyTrend: honeyTrendData,
+        }));
+
       } else if (isHR) {
         const [hrRes, projectRes] = await Promise.all([
-          API.get("/dashboard/hr-summary"),
-          API.get("/dashboard/project-stats"),
+          dashboardService.getHrSummary(),
+          dashboardService.getProjectStats(),
         ]);
-        newData.hrSummary = hrRes.data;
-        newData.projectStats = projectRes.data;
-      } else if (isEmployee) {
-        const myRes = await API.get("/dashboard/my-summary");
-        newData.mySummary = myRes.data;
-      }
+        setDashboardData(prev => ({ ...prev, hrSummary: hrRes, projectStats: projectRes }));
 
-      setDashboardData(newData);
+      } else if (isEmployee) {
+        const myRes = await dashboardService.getMySummary();
+        setDashboardData(prev => ({ ...prev, mySummary: myRes }));
+      }
     } catch (err) {
-      console.error("Dashboard load failed", err);
-      toast.error("Failed to load dashboard data.");
+      // Errors are handled in the service
     } finally {
       setIsLoading(false);
     }
@@ -93,343 +155,212 @@ export default function Dashboard() {
     fetchData();
   }, [fetchData]);
 
-  if (isLoading) {
-    return (
-      <div className="p-4 sm:p-6 lg:p-8 flex justify-center items-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2 text-lg">Loading dashboard...</span>
-      </div>
-    );
-  }
+  const { adminSummary, hrSummary, mySummary, projectStats, topHoneyProducers, topBeneficiaries, beneficiariesByVillage, honeyTrend } = dashboardData;
 
-  const { adminSummary, hrSummary, mySummary, projectStats, topHoneyProducers, topBeneficiaries } = dashboardData;
+  const renderBeneficiaryVillageChart = () => (
+    <Card className="col-span-12 lg:col-span-4">
+      <CardHeader>
+        <CardTitle>Beneficiaries by Village</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+           <Skeleton className="h-[300px] w-full" />
+        ) : beneficiariesByVillage && beneficiariesByVillage.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <RechartsPieChart>
+              <Pie
+                data={beneficiariesByVillage}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                outerRadius={100}
+                fill="#8884d8"
+                dataKey="total"
+                nameKey="village"
+              >
+                {beneficiariesByVillage.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value, name) => [value, name]} />
+              <Legend />
+            </RechartsPieChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex h-[300px] items-center justify-center text-muted-foreground">
+            No village distribution data available.
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  const renderHoneyTrendChart = () => (
+    <Card className="col-span-12 lg:col-span-8">
+      <CardHeader>
+        <CardTitle>Honey Production Trend</CardTitle>
+        <CardDescription>Monthly honey production for the current year.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <Skeleton className="h-[300px] w-full" />
+        ) : honeyTrend && honeyTrend.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={honeyTrend} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip formatter={(value) => [`${value} kg`, "Honey"]} />
+              <Legend />
+              <Line type="monotone" dataKey="total_kg" name="Honey (kg)" strokeWidth={2} stroke={COLORS[0]} activeDot={{ r: 8 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex h-[300px] items-center justify-center text-muted-foreground">
+             No honey production data available for this year.
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      <h1 className="text-3xl font-bold">Dashboard</h1>
+    <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
 
       {/* Admin/Manager Dashboard */}
       {isAdminOrManager && (
-        <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{adminSummary?.total_users || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
-                <Briefcase className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{adminSummary?.total_employees || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Departments</CardTitle>
-                <Building className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{adminSummary?.total_departments || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Leaves</CardTitle>
-                <Hourglass className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{adminSummary?.pending_leaves || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Expenses</CardTitle>
-                <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{adminSummary?.pending_expenses || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Employees Present Today</CardTitle>
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{adminSummary?.present_today || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Payroll Generated Today</CardTitle>
-                <Gauge className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{adminSummary?.payroll_generated_today || 0}</div>
-              </CardContent>
-            </Card>
-          </div>
+        <div className="grid gap-4 md:gap-8 grid-cols-12">
+            <div className="col-span-12 grid gap-4 md:gap-8 lg:grid-cols-4">
+              {isLoading ? (
+                <>
+                  <StatCardSkeleton />
+                  <StatCardSkeleton />
+                  <StatCardSkeleton />
+                  <StatCardSkeleton />
+                </>
+              ) : (
+                <>
+                  <StatCard title="Total Beneficiaries" value={projectStats?.total_beneficiaries || 0} icon={<Users className="h-4 w-4 text-muted-foreground" />} />
+                  <StatCard title="Total Employees" value={adminSummary?.total_employees || 0} icon={<Briefcase className="h-4 w-4 text-muted-foreground" />} />
+                  <StatCard title="Pending Leaves" value={adminSummary?.pending_leaves || 0} icon={<Hourglass className="h-4 w-4 text-muted-foreground" />} />
+                  <StatCard title="Pending Expenses" value={adminSummary?.pending_expenses || 0} icon={<DollarSign className="h-4 w-4 text-muted-foreground" />} />
+                </>
+              )}
+            </div>
 
-          <h2 className="text-2xl font-bold mt-8">Project Overview</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Beneficiaries</CardTitle>
-                <User className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{projectStats?.total_beneficiaries || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Beehives Distributed</CardTitle>
-                <FlaskConical className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{projectStats?.total_beehives_distributed || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Honey This Year (kg)</CardTitle>
-                <Beef className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{projectStats?.total_honey_this_year || 0} kg</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Expenses This Month (₹)</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">₹{projectStats?.total_expenses_this_month?.toLocaleString('en-IN') || 0}</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Top 5 Honey Producers</CardTitle>
-                <CardDescription>Beneficiaries with highest honey production.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {topHoneyProducers && topHoneyProducers.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Beneficiary</TableHead>
-                        <TableHead>Village</TableHead>
-                        <TableHead className="text-right">Honey (kg)</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {topHoneyProducers.map((p, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{p.name}</TableCell>
-                          <TableCell>{p.village}</TableCell>
-                          <TableCell className="text-right">{p.total_honey_kg} kg</TableCell>
+            {renderHoneyTrendChart()}
+            {renderBeneficiaryVillageChart()}
+            
+            <div className="col-span-12 lg:col-span-7">
+               <Card>
+                <CardHeader>
+                  <CardTitle>Top 5 Honey Producers</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? <TableSkeleton /> : topHoneyProducers && topHoneyProducers.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Beneficiary</TableHead>
+                          <TableHead>Village</TableHead>
+                          <TableHead className="text-right">Honey (kg)</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <p className="text-muted-foreground">No top producers data available.</p>
-                )}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Top 5 Performing Beneficiaries</CardTitle>
-                <CardDescription>Based on honey production and beehives.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {topBeneficiaries && topBeneficiaries.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Beneficiary</TableHead>
-                        <TableHead>Village</TableHead>
-                        <TableHead className="text-right">Honey (kg)</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {topBeneficiaries.map((b, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{b.name}</TableCell>
-                          <TableCell>{b.village}</TableCell>
-                          <TableCell className="text-right">{b.total_honey_kg} kg</TableCell>
+                      </TableHeader>
+                      <TableBody>
+                        {topHoneyProducers.map((p, index) => (
+                          <TableRow key={index}>
+                            <TableCell>{p.name}</TableCell>
+                            <TableCell>{p.village}</TableCell>
+                            <TableCell className="text-right">{p.total_honey_kg} kg</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                     <div className="flex h-24 items-center justify-center text-muted-foreground">
+                      No top producers data available.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+            <div className="col-span-12 lg:col-span-5">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Top 5 Performing Beneficiaries</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? <TableSkeleton /> : topBeneficiaries && topBeneficiaries.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Beneficiary</TableHead>
+                          <TableHead className="text-right">Honey (kg)</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <p className="text-muted-foreground">No top beneficiaries data available.</p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          <h2 className="text-2xl font-bold mt-8">Trends & Distributions</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle>Attendance Trend</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Chart: Attendance trend over time (last 30 days).</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle>Honey Production Trend</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Chart: Monthly honey production trend.</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle>Beneficiaries by Village</CardTitle>
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Chart: Distribution of beneficiaries across villages.</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle>Gender Distribution</CardTitle>
-                <PieChart className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Chart: Gender breakdown of beneficiaries.</p>
-              </CardContent>
-            </Card>
-          </div>
+                      </TableHeader>
+                      <TableBody>
+                        {topBeneficiaries.map((b, index) => (
+                          <TableRow key={index}>
+                            <TableCell>{b.name}</TableCell>
+                            <TableCell className="text-right">{b.total_honey_kg} kg</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="flex h-24 items-center justify-center text-muted-foreground">
+                      No top beneficiaries data available.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
         </div>
       )}
 
       {/* HR Dashboard */}
       {isHR && (
-        <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{hrSummary?.total_employees || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Departments</CardTitle>
-                <Building className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{hrSummary?.total_departments || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Leave Requests</CardTitle>
-                <GitPullRequest className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{hrSummary?.pending_leaves || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Employees Present Today</CardTitle>
-                <CalendarDays className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{hrSummary?.present_today || 0}</div>
-              </CardContent>
-            </Card>
-          </div>
-          <h2 className="text-2xl font-bold mt-8">Beneficiary Insights</h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle>Beneficiaries by Village</CardTitle>
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Chart: Distribution of beneficiaries across villages.</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle>Gender Distribution</CardTitle>
-                <PieChart className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Chart: Gender breakdown of beneficiaries.</p>
-              </CardContent>
-            </Card>
-          </div>
+         <div className="grid gap-4 md:gap-8 lg:grid-cols-4">
+              {isLoading ? (
+                <>
+                  <StatCardSkeleton />
+                  <StatCardSkeleton />
+                  <StatCardSkeleton />
+                  <StatCardSkeleton />
+                </>
+              ) : (
+                <>
+                  <StatCard title="Total Employees" value={hrSummary?.total_employees || 0} icon={<Users className="h-4 w-4 text-muted-foreground" />} />
+                  <StatCard title="Total Departments" value={hrSummary?.total_departments || 0} icon={<Building className="h-4 w-4 text-muted-foreground" />} />
+                  <StatCard title="Pending Leaves" value={hrSummary?.pending_leaves || 0} icon={<Hourglass className="h-4 w-4 text-muted-foreground" />} />
+                  <StatCard title="Present Today" value={hrSummary?.present_today || 0} icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />} />
+                </>
+              )}
         </div>
       )}
 
       {/* Employee Dashboard */}
       {isEmployee && (
-        <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Present This Month</CardTitle>
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{mySummary?.present_days_this_month || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Approved Leaves</CardTitle>
-                <Plane className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{mySummary?.total_approved_leaves || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Approved Expenses</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">₹{mySummary?.approved_expenses?.toLocaleString('en-IN') || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Estimated Monthly Salary</CardTitle>
-                <Award className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">₹{mySummary?.salary?.toLocaleString('en-IN') || 0}</div>
-              </CardContent>
-            </Card>
-          </div>
+        <div className="grid gap-4 md:gap-8 lg:grid-cols-4">
+            {isLoading ? (
+                <>
+                  <StatCardSkeleton />
+                  <StatCardSkeleton />
+                  <StatCardSkeleton />
+                  <StatCardSkeleton />
+                </>
+            ) : (
+                <>
+                    <StatCard title="Present This Month" value={`${mySummary?.present_days_this_month || 0} days`} icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />} />
+                    <StatCard title="Approved Leaves" value={mySummary?.total_approved_leaves || 0} icon={<Plane className="h-4 w-4 text-muted-foreground" />} />
+                    <StatCard title="Approved Expenses" value={`₹${mySummary?.approved_expenses?.toLocaleString('en-IN') || 0}`} icon={<DollarSign className="h-4 w-4 text-muted-foreground" />} />
+                    <StatCard title="Monthly Salary" value={`₹${mySummary?.salary?.toLocaleString('en-IN') || 0}`} icon={<Award className="h-4 w-4 text-muted-foreground" />} />
+                </>
+            )}
         </div>
       )}
-    </div>
+    </main>
   );
 }

@@ -4,48 +4,59 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --background: 231 43% 97%; /* #F5F6FA - Light Gray */
+    --foreground: 220 14% 10%; /* #1A1A1A - Dark Gray */
+    --card: 0 0% 100%; /* White for light mode card */
+    --card-foreground: 220 14% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
+    --popover-foreground: 220 14% 10%;
+    --primary: 233 66% 30%; /* #1E2A78 - Deep Blue */
+    --primary-foreground: 210 20% 98%; /* Near white */
+    --secondary: 182 100% 39%; /* #00C2C7 - Aqua/Teal */
+    --secondary-foreground: 220 14% 10%; /* Dark Gray */
+    --muted: 220 14.3% 95.9%; /* Retain a light gray for muted elements */
+    --muted-foreground: 220 4% 44%; /* #6F6F6F - Muted Gray */
+    --accent: 182 100% 39%; /* Aqua/Teal */
+    --accent-foreground: 220 14% 10%; /* Dark Gray */
+    --destructive: 350 78% 68%; /* #D64545 - Rejected Red */
+    --destructive-foreground: 210 20% 98%;
+    --border: 220 13% 91%; /* Light border */
+    --input: 220 13% 91%; /* Light input border */
+    --ring: 233 66% 30%; /* Deep Blue */
+    --radius: 0.75rem; /* 12px for rounded corners */
+
+    /* Custom Status Colors */
+    --status-approved: 147 64% 41%; /* #29A36A - Green */
+    --status-rejected: 350 78% 68%; /* #D64545 - Red */
+    --status-pending: 40 85% 52%; /* #E7A322 - Yellow */
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --background: 220 14% 10%; /* #1A1A1A - Dark Gray */
+    --foreground: 231 43% 97%; /* Light Gray */
+    --card: 220 14% 15%; /* Slightly darker than background for contrast */
+    --card-foreground: 231 43% 97%;
+    --popover: 220 14% 15%;
+    --popover-foreground: 231 43% 97%;
+    --primary: 233 66% 30%; /* #1E2A78 - Deep Blue (same as light, or slightly adjusted) */
+    --primary-foreground: 210 20% 98%;
+    --secondary: 182 100% 39%; /* #00C2C7 - Aqua/Teal (same as light) */
+    --secondary-foreground: 231 43% 97%;
+    --muted: 220 14% 20%; /* Darker muted */
+    --muted-foreground: 220 4% 65%; /* Lighter muted gray */
+    --accent: 182 100% 39%;
+    --accent-foreground: 231 43% 97%;
+    --destructive: 350 78% 68%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 220 14% 25%; /* Darker border */
+    --input: 220 14% 25%; /* Darker input border */
+    --ring: 233 66% 30%;
+    --radius: 0.75rem;
+
+    /* Custom Status Colors for dark mode - adjust if needed for contrast */
+    --status-approved: 147 64% 41%;
+    --status-rejected: 350 78% 68%;
+    --status-pending: 40 85% 52%;
   }
 }
 
@@ -55,5 +66,6 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "liga" on, "calt" on;
   }
 }
