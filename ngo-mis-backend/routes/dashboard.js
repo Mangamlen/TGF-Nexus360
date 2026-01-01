@@ -337,6 +337,9 @@ router.get("/modern", verifyToken, allowRoles([1, 2, 5]), async (req, res) => {
       attendanceTrends,
       monthlyLeaves,
       reportStatus,
+      totalBeneficiariesResult, // New
+      topHoneyProducersResult, // New
+      topPerformingBeneficiariesResult, // New
     ] = await Promise.all([
       db.promise().query("SELECT COUNT(*) as approved_reports_count FROM report_status WHERE status = 'Approved'"),
       db.promise().query("SELECT status, COUNT(*) as count FROM attendance_logs WHERE date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) GROUP BY status"),
@@ -345,6 +348,9 @@ router.get("/modern", verifyToken, allowRoles([1, 2, 5]), async (req, res) => {
       db.promise().query("SELECT DATE(date) as date, COUNT(*) as present_count FROM attendance_logs WHERE status = 'Present' AND date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) GROUP BY DATE(date) ORDER BY DATE(date) ASC"),
       db.promise().query("SELECT MONTHNAME(start_date) as month, COUNT(*) as leave_count FROM leave_requests WHERE YEAR(start_date) = YEAR(CURDATE()) GROUP BY MONTH(start_date), MONTHNAME(start_date) ORDER BY MONTH(start_date)"),
       db.promise().query("SELECT status, COUNT(*) as count FROM report_status GROUP BY status"),
+      db.promise().query("SELECT COUNT(*) as total_beneficiaries FROM beneficiaries"), // New: Total Beneficiaries
+      db.promise().query(`SELECT b.id AS beneficiary_id, b.name, b.village, SUM(h.quantity_kg) AS total_honey_kg FROM beneficiaries b JOIN honey_production h ON h.beneficiary_id = b.id GROUP BY b.id, b.name, b.village ORDER BY total_honey_kg DESC LIMIT 5`), // New: Top 5 Honey Producers
+      db.promise().query(`SELECT b.id AS beneficiary_id, b.name, b.village, IFNULL(SUM(h.quantity_kg), 0) AS total_honey_kg, IFNULL(COUNT(be.id), 0) AS total_hives FROM beneficiaries b LEFT JOIN honey_production h ON h.beneficiary_id = b.id LEFT JOIN beehives be ON be.beneficiary_id = b.id GROUP BY b.id, b.name, b.village ORDER BY total_honey_kg DESC, total_hives DESC LIMIT 5`), // New: Top 5 Performing Beneficiaries
     ]);
 
     res.json({
@@ -355,6 +361,9 @@ router.get("/modern", verifyToken, allowRoles([1, 2, 5]), async (req, res) => {
       attendanceTrends: attendanceTrends[0],
       monthlyLeaves: monthlyLeaves[0],
       reportStatus: reportStatus[0],
+      totalBeneficiaries: totalBeneficiariesResult[0][0]?.total_beneficiaries || 0, // New
+      topHoneyProducers: topHoneyProducersResult[0], // New
+      topPerformingBeneficiaries: topPerformingBeneficiariesResult[0], // New
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
