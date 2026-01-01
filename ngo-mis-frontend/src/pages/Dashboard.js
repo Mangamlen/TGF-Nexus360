@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "../components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 
 import {
   PieChart as RechartsPieChart,
@@ -67,6 +68,27 @@ const StatCardSkeleton = () => (
       <Skeleton className="h-3 w-3/4" />
     </CardContent>
   </Card>
+);
+
+const TableSkeleton = ({ rows = 5, cols = 3 }) => (
+  <Table>
+    <TableHeader>
+      <TableRow>
+        {Array.from({ length: cols }).map((_, i) => (
+          <TableHead key={i}><Skeleton className="h-4 w-full" /></TableHead>
+        ))}
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      {Array.from({ length: rows }).map((_, i) => (
+        <TableRow key={i}>
+          {Array.from({ length: cols }).map((_, j) => (
+            <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+          ))}
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
 );
 
 export default function Dashboard() {
@@ -184,6 +206,11 @@ export default function Dashboard() {
                   title="Approved Reports"
                   value={modernData.approvedReportsCount || 0}
                   icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+                />
+                <StatCard
+                  title="Total Beneficiaries"
+                  value={modernData.totalBeneficiaries || 0}
+                  icon={<Users className="h-4 w-4 text-muted-foreground" />}
                 />
                 <StatCard
                   title="FO Activity Count"
@@ -331,6 +358,78 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
+
+          {/* Top 5 Honey Producers Table */}
+          <div className="col-span-12 lg:col-span-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Top 5 Honey Producers</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <TableSkeleton />
+                ) : modernData.topHoneyProducers && modernData.topHoneyProducers.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Beneficiary</TableHead>
+                        <TableHead>Village</TableHead>
+                        <TableHead className="text-right">Honey (kg)</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {modernData.topHoneyProducers.map((p, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{p.name}</TableCell>
+                          <TableCell>{p.village}</TableCell>
+                          <TableCell className="text-right">{p.total_honey_kg} kg</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="flex h-24 items-center justify-center text-muted-foreground">
+                    No top producers data available.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Top 5 Performing Beneficiaries Table */}
+          <div className="col-span-12 lg:col-span-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Top 5 Performing Beneficiaries</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <TableSkeleton />
+                ) : modernData.topPerformingBeneficiaries && modernData.topPerformingBeneficiaries.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Beneficiary</TableHead>
+                        <TableHead className="text-right">Honey (kg)</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {modernData.topPerformingBeneficiaries.map((b, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{b.name}</TableCell>
+                          <TableCell className="text-right">{b.total_honey_kg} kg</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="flex h-24 items-center justify-center text-muted-foreground">
+                    No top beneficiaries data available.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       )}
 
