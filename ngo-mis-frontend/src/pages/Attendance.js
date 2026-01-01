@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import API from "../services/api";
 import { toast } from "react-toastify";
 import { Button } from "../components/ui/button";
@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../co
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -292,7 +291,7 @@ export default function Attendance() {
                   <TableBody>
                     {history.map((row) => (
                       <TableRow key={row.id}>
-                        <TableCell className="font-medium">{format(new Date(row.attendance_date), "PPP")}</TableCell>
+                        <TableCell className="font-medium">{row.attendance_date ? format(new Date(row.attendance_date), "PPP") : '-'}</TableCell>
                         <TableCell>
                           {row.check_in
                             ? format(new Date(row.check_in), "p")
@@ -347,7 +346,7 @@ export default function Attendance() {
                       <TableRow key={record.id}>
                         <TableCell>{record.emp_code}</TableCell>
                         <TableCell>{record.employee_name}</TableCell>
-                        <TableCell className="font-medium">{format(new Date(record.attendance_date), "PPP")}</TableCell>
+                        <TableCell className="font-medium">{record.attendance_date ? format(new Date(record.attendance_date), "PPP") : '-'}</TableCell>
                         <TableCell>
                           {record.check_in
                             ? format(new Date(record.check_in), "p")

@@ -6,9 +6,8 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "../components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+
 import {
   PieChart as RechartsPieChart,
   Pie,
@@ -16,27 +15,26 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
-  LineChart,
+  LineChart as RechartsLineChart,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
+  BarChart as RechartsBarChart,
+  Bar,
 } from "recharts";
 import {
   Users,
   Building,
   Hourglass,
   DollarSign,
-  Briefcase,
   CheckCircle,
-  TrendingUp,
-  MapPin,
-  PieChart,
-  User,
-  FlaskConical,
-  Loader2,
   Plane,
-  Award
+  Award,
+  XCircle, // For Absent %
+  Clock, // For Pending Leaves
+  FileText, // For Approved Reports
+  Activity, // For FO Activity
 } from "lucide-react";
 import { Skeleton } from "../components/ui/skeleton"; // Import Skeleton
 
@@ -71,27 +69,6 @@ const StatCardSkeleton = () => (
   </Card>
 );
 
-const TableSkeleton = ({ rows = 5, cols = 3 }) => (
-  <Table>
-    <TableHeader>
-      <TableRow>
-        {Array.from({ length: cols }).map((_, i) => (
-          <TableHead key={i}><Skeleton className="h-4 w-full" /></TableHead>
-        ))}
-      </TableRow>
-    </TableHeader>
-    <TableBody>
-      {Array.from({ length: rows }).map((_, i) => (
-        <TableRow key={i}>
-          {Array.from({ length: cols }).map((_, j) => (
-            <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
-          ))}
-        </TableRow>
-      ))}
-    </TableBody>
-  </Table>
-);
-
 export default function Dashboard() {
   const roleId = getRoleId();
   const isAdminOrManager = roleId === 1 || roleId === 2;
@@ -107,6 +84,7 @@ export default function Dashboard() {
     topBeneficiaries: null,
     beneficiariesByVillage: [],
     honeyTrend: [],
+    modernData: null, // New state for modern dashboard data
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -114,25 +92,12 @@ export default function Dashboard() {
     setIsLoading(true);
     try {
       if (isAdminOrManager) {
-        const [adminRes, projectRes, topProducersRes, topBeneficiariesRes, villageData, honeyTrendData] = await Promise.all([
-          dashboardService.getAdminSummary(),
-          dashboardService.getProjectStats(),
-          dashboardService.getTopHoneyProducers(),
-          dashboardService.getTopBeneficiaries(),
-          dashboardService.getBeneficiariesByVillage(),
-          dashboardService.getHoneyTrend(),
-        ]);
-
+        // Fetch modern dashboard data
+        const modernRes = await dashboardService.getModernDashboardData();
         setDashboardData(prev => ({
           ...prev,
-          adminSummary: adminRes,
-          projectStats: projectRes,
-          topHoneyProducers: topProducersRes,
-          topBeneficiaries: topBeneficiariesRes,
-          beneficiariesByVillage: villageData,
-          honeyTrend: honeyTrendData,
+          modernData: modernRes,
         }));
-
       } else if (isHR) {
         const [hrRes, projectRes] = await Promise.all([
           dashboardService.getHrSummary(),
@@ -155,168 +120,217 @@ export default function Dashboard() {
     fetchData();
   }, [fetchData]);
 
-  const { adminSummary, hrSummary, mySummary, projectStats, topHoneyProducers, topBeneficiaries, beneficiariesByVillage, honeyTrend } = dashboardData;
+  const { hrSummary, mySummary, modernData } = dashboardData;
 
-  const renderBeneficiaryVillageChart = () => (
-    <Card className="col-span-12 lg:col-span-4">
-      <CardHeader>
-        <CardTitle>Beneficiaries by Village</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-           <Skeleton className="h-[300px] w-full" />
-        ) : beneficiariesByVillage && beneficiariesByVillage.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <RechartsPieChart>
-              <Pie
-                data={beneficiariesByVillage}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={100}
-                fill="#8884d8"
-                dataKey="total"
-                nameKey="village"
-              >
-                {beneficiariesByVillage.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value, name) => [value, name]} />
-              <Legend />
-            </RechartsPieChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="flex h-[300px] items-center justify-center text-muted-foreground">
-            No village distribution data available.
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
+  const calculatePercentages = (statsArray, type) => {
+    const totalCount = statsArray.reduce((sum, item) => sum + item.count, 0);
+    if (totalCount === 0) {
+      if (type === 'attendance') return { present: 0, absent: 0 }; // Simplified for now
+      if (type === 'leave') return { pending: 0, approved: 0, rejected: 0 };
+      return {};
+    }
 
-  const renderHoneyTrendChart = () => (
-    <Card className="col-span-12 lg:col-span-8">
-      <CardHeader>
-        <CardTitle>Honey Production Trend</CardTitle>
-        <CardDescription>Monthly honey production for the current year.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <Skeleton className="h-[300px] w-full" />
-        ) : honeyTrend && honeyTrend.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={honeyTrend} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip formatter={(value) => [`${value} kg`, "Honey"]} />
-              <Legend />
-              <Line type="monotone" dataKey="total_kg" name="Honey (kg)" strokeWidth={2} stroke={COLORS[0]} activeDot={{ r: 8 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="flex h-[300px] items-center justify-center text-muted-foreground">
-             No honey production data available for this year.
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
+    if (type === 'attendance') {
+      const present = (statsArray.find(item => item.status === 'Present')?.count || 0);
+      const absent = (statsArray.find(item => item.status === 'Absent')?.count || 0);
+      const halfDay = (statsArray.find(item => item.status === 'Half Day')?.count || 0);
+      // For simplicity, we'll combine Half Day into Absent for percentage
+      const actualAbsent = absent + halfDay;
+      
+      const presentPercentage = ((present / totalCount) * 100).toFixed(1);
+      const absentPercentage = ((actualAbsent / totalCount) * 100).toFixed(1);
+      
+      // Note: "Late" is not directly available from the current data structure.
+      // If "Late" needs to be calculated, more specific data (e.g., check-in times vs. office start time)
+      // or backend modifications would be required.
+      
+      return { present: presentPercentage, absent: absentPercentage };
+    }
+
+    if (type === 'leave') {
+      const pending = (statsArray.find(item => item.status === 'Pending')?.count || 0);
+      const approved = (statsArray.find(item => item.status === 'Approved')?.count || 0);
+      const rejected = (statsArray.find(item => item.status === 'Rejected')?.count || 0);
+      
+      const pendingPercentage = ((pending / totalCount) * 100).toFixed(1);
+      const approvedPercentage = ((approved / totalCount) * 100).toFixed(1);
+      const rejectedPercentage = ((rejected / totalCount) * 100).toFixed(1);
+      
+      return { pending: pendingPercentage, approved: approvedPercentage, rejected: rejectedPercentage };
+    }
+
+    return {};
+  };
 
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
 
-      {/* Admin/Manager Dashboard */}
-      {isAdminOrManager && (
+      {/* Admin/Manager Dashboard - Modern View */}
+      {isAdminOrManager && modernData && (
         <div className="grid gap-4 md:gap-8 grid-cols-12">
-            <div className="col-span-12 grid gap-4 md:gap-8 lg:grid-cols-4">
-              {isLoading ? (
-                <>
-                  <StatCardSkeleton />
-                  <StatCardSkeleton />
-                  <StatCardSkeleton />
-                  <StatCardSkeleton />
-                </>
-              ) : (
-                <>
-                  <StatCard title="Total Beneficiaries" value={projectStats?.total_beneficiaries || 0} icon={<Users className="h-4 w-4 text-muted-foreground" />} />
-                  <StatCard title="Total Employees" value={adminSummary?.total_employees || 0} icon={<Briefcase className="h-4 w-4 text-muted-foreground" />} />
-                  <StatCard title="Pending Leaves" value={adminSummary?.pending_leaves || 0} icon={<Hourglass className="h-4 w-4 text-muted-foreground" />} />
-                  <StatCard title="Pending Expenses" value={adminSummary?.pending_expenses || 0} icon={<DollarSign className="h-4 w-4 text-muted-foreground" />} />
-                </>
-              )}
-            </div>
+          {/* KPI Stat Cards */}
+          <div className="col-span-12 grid gap-4 md:gap-8 lg:grid-cols-4">
+            {isLoading ? (
+              <>
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+              </>
+            ) : (
+              <>
+                <StatCard
+                  title="Approved Reports"
+                  value={modernData.approvedReportsCount || 0}
+                  icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+                />
+                <StatCard
+                  title="FO Activity Count"
+                  value={modernData.foActivityCount || 0}
+                  icon={<Activity className="h-4 w-4 text-muted-foreground" />}
+                />
+                {/* Attendance Stats */}
+                {(() => {
+                  const attendancePercentages = calculatePercentages(modernData.attendanceStats, 'attendance');
+                  return (
+                    <>
+                      <StatCard
+                        title="Present % (Last 30 Days)"
+                        value={`${attendancePercentages.present}%`}
+                        icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
+                      />
+                      <StatCard
+                        title="Absent % (Last 30 Days)"
+                        value={`${attendancePercentages.absent}%`}
+                        icon={<XCircle className="h-4 w-4 text-muted-foreground" />}
+                      />
+                    </>
+                  );
+                })()}
+                {/* Leave Status */}
+                {(() => {
+                  const leaveStats = modernData.leaveStatus;
+                  const leavePercentages = calculatePercentages(modernData.leaveStatus, 'leave');
 
-            {renderHoneyTrendChart()}
-            {renderBeneficiaryVillageChart()}
-            
-            <div className="col-span-12 lg:col-span-7">
-               <Card>
-                <CardHeader>
-                  <CardTitle>Top 5 Honey Producers</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? <TableSkeleton /> : topHoneyProducers && topHoneyProducers.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Beneficiary</TableHead>
-                          <TableHead>Village</TableHead>
-                          <TableHead className="text-right">Honey (kg)</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {topHoneyProducers.map((p, index) => (
-                          <TableRow key={index}>
-                            <TableCell>{p.name}</TableCell>
-                            <TableCell>{p.village}</TableCell>
-                            <TableCell className="text-right">{p.total_honey_kg} kg</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                     <div className="flex h-24 items-center justify-center text-muted-foreground">
-                      No top producers data available.
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-            <div className="col-span-12 lg:col-span-5">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Top 5 Performing Beneficiaries</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? <TableSkeleton /> : topBeneficiaries && topBeneficiaries.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Beneficiary</TableHead>
-                          <TableHead className="text-right">Honey (kg)</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {topBeneficiaries.map((b, index) => (
-                          <TableRow key={index}>
-                            <TableCell>{b.name}</TableCell>
-                            <TableCell className="text-right">{b.total_honey_kg} kg</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <div className="flex h-24 items-center justify-center text-muted-foreground">
-                      No top beneficiaries data available.
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+
+                  const pendingLeaves = leaveStats.find(item => item.status === 'Pending')?.count || 0;
+                  const approvedLeaves = leaveStats.find(item => item.status === 'Approved')?.count || 0;
+                  const rejectedLeaves = leaveStats.find(item => item.status === 'Rejected')?.count || 0;
+
+                  return (
+                    <>
+                      <StatCard
+                        title="Pending Leaves"
+                        value={`${leavePercentages.pending}% (${pendingLeaves})`}
+                        icon={<Clock className="h-4 w-4 text-muted-foreground" />}
+                      />
+                      <StatCard
+                        title="Approved Leaves"
+                        value={`${leavePercentages.approved}% (${approvedLeaves})`}
+                        icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
+                      />
+                      <StatCard
+                        title="Rejected Leaves"
+                        value={`${leavePercentages.rejected}% (${rejectedLeaves})`}
+                        icon={<XCircle className="h-4 w-4 text-muted-foreground" />}
+                      />
+                    </>
+                  );
+                })()}
+              </>
+            )}
+          </div>
+
+          {/* Charts Section */}
+          <Card className="col-span-12 lg:col-span-6">
+            <CardHeader>
+              <CardTitle>Attendance Trends (Last 30 Days)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <Skeleton className="h-[300px] w-full" />
+              ) : modernData.attendanceTrends && modernData.attendanceTrends.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <RechartsLineChart data={modernData.attendanceTrends} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="present_count" name="Present Employees" stroke={COLORS[0]} activeDot={{ r: 8 }} />
+                  </RechartsLineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-[300px] items-center justify-center text-muted-foreground">
+                  No attendance trend data available.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="col-span-12 lg:col-span-6">
+            <CardHeader>
+              <CardTitle>Monthly Leaves (Current Year)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <Skeleton className="h-[300px] w-full" />
+              ) : modernData.monthlyLeaves && modernData.monthlyLeaves.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <RechartsBarChart data={modernData.monthlyLeaves} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="leave_count" name="Leaves" fill={COLORS[1]} />
+                  </RechartsBarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-[300px] items-center justify-center text-muted-foreground">
+                  No monthly leave data available.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="col-span-12">
+            <CardHeader>
+              <CardTitle>Report Status Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <Skeleton className="h-[300px] w-full" />
+              ) : modernData.reportStatus && modernData.reportStatus.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <RechartsPieChart>
+                    <Pie
+                      data={modernData.reportStatus}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ status, count }) => `${status}: ${count}`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="count"
+                      nameKey="status"
+                    >
+                      {modernData.reportStatus.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-[300px] items-center justify-center text-muted-foreground">
+                  No report status data available.
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
 

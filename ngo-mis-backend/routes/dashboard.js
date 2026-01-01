@@ -327,5 +327,39 @@ router.get("/filters", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
   });
 });
 
+router.get("/modern", verifyToken, allowRoles([1, 2, 5]), async (req, res) => {
+  try {
+    const [
+      approvedReportsCount,
+      attendanceStats,
+      leaveStatus,
+      foActivityCount,
+      attendanceTrends,
+      monthlyLeaves,
+      reportStatus,
+    ] = await Promise.all([
+      db.promise().query("SELECT COUNT(*) as approved_reports_count FROM reports WHERE status = 'Approved'"),
+      db.promise().query("SELECT status, COUNT(*) as count FROM attendance_logs WHERE date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) GROUP BY status"),
+      db.promise().query("SELECT status, COUNT(*) as count FROM leave_requests GROUP BY status"),
+      db.promise().query("SELECT COUNT(*) as fo_activity_count FROM activity_log WHERE user_id IN (SELECT user_id FROM users WHERE role_id = 5)"),
+      db.promise().query("SELECT DATE(date) as date, COUNT(*) as present_count FROM attendance_logs WHERE status = 'Present' AND date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) GROUP BY DATE(date) ORDER BY DATE(date) ASC"),
+      db.promise().query("SELECT MONTHNAME(start_date) as month, COUNT(*) as leave_count FROM leave_requests WHERE YEAR(start_date) = YEAR(CURDATE()) GROUP BY MONTH(start_date), MONTH(start_date) ORDER BY MONTH(start_date)"),
+      db.promise().query("SELECT status, COUNT(*) as count FROM reports GROUP BY status"),
+    ]);
+
+    res.json({
+      approvedReportsCount: approvedReportsCount[0][0].approved_reports_count,
+      attendanceStats: attendanceStats[0],
+      leaveStatus: leaveStatus[0],
+      foActivityCount: foActivityCount[0][0].fo_activity_count,
+      attendanceTrends: attendanceTrends[0],
+      monthlyLeaves: monthlyLeaves[0],
+      reportStatus: reportStatus[0],
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 module.exports = router;

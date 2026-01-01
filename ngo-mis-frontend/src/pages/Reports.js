@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Badge } from "../components/ui/badge";
-import { Download, Check, Lock, History, Loader2, Users, MapPin } from "lucide-react"; // Import Icons
+import { Download, Check, Lock, History, Loader2, Users } from "lucide-react"; // Import Icons
 import * as dashboardService from "../services/dashboardService"; // Import dashboard service
 
 export default function Reports() {

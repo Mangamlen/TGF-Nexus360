@@ -42,7 +42,13 @@ export const getEmployeePayslip = async (employeeId, month, year) => {
     const { data } = await API.get(`/payroll/slip/${employeeId}/${month}/${year}`);
     return data;
   } catch (err) {
-    toast.error(err.response?.data?.error || "Failed to fetch payslip.");
+    if (err.response && err.response.status === 404) {
+      // Don't show an error toast if the payslip is simply not found.
+      // The component will handle the null response.
+      return null;
+    }
+    // For other errors (e.g., server error), show a generic error message.
+    toast.error(err.response?.data?.error || "An error occurred while fetching the payslip.");
     throw err;
   }
 };

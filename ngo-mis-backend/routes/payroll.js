@@ -110,7 +110,7 @@ router.get("/history", verifyToken, allowRoles([1, 2]), (req, res) => {
   });
 });
 
-router.get("/slip/:employee_id/:month/:year", async (req, res) => {
+router.get("/slip/:employee_id/:month/:year", verifyToken, async (req, res) => {
   const { employee_id, month, year } = req.params;
 
   try {
@@ -134,8 +134,8 @@ router.get("/slip/:employee_id/:month/:year", async (req, res) => {
       FROM payroll_records pr
       JOIN employees e ON pr.employee_id = e.id
       JOIN users u ON e.user_id = u.id
-      JOIN departments d ON e.department_id = d.id
-      JOIN designations dg ON e.designation_id = dg.id
+      LEFT JOIN departments d ON e.department_id = d.id
+      LEFT JOIN designations dg ON e.designation_id = dg.id
       LEFT JOIN salary_structures ss ON e.id = ss.employee_id
       WHERE pr.employee_id = ? AND pr.month = ? AND pr.year = ?;
     `;

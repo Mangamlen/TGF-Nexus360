@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import * as employeeService from "../services/employeeService";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
-import { Loader2, User, Mail, Phone, Briefcase, Building, Calendar } from "lucide-react";
+import { User, Mail, Phone, Briefcase, Building, Calendar } from "lucide-react";
 import API from "../services/api";
 import { Skeleton } from "../components/ui/skeleton"; // Import Skeleton
 
@@ -104,7 +104,7 @@ export default function EmployeeProfile() {
             <AvatarFallback className="text-4xl">{getInitials(employee.name)}</AvatarFallback>
           </Avatar>
           <div className="text-center md:text-left">
-            <h1 className="text-3xl font-bold">{employee.name}</h1>
+            <h1 className="text-3xl font-bold">{employee.name || 'User Name Not Available'}</h1>
             <p className="text-xl text-muted-foreground">{employee.designation}</p>
             <p className="text-sm text-muted-foreground">{employee.department}</p>
           </div>

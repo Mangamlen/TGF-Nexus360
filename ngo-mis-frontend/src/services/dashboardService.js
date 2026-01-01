@@ -78,6 +78,12 @@ export const getHoneyTrend = (year) => {
     .catch(err => handleApiError(err, "Failed to load honey production trend."));
 };
 
+export const getModernDashboardData = () => {
+  return API.get("/dashboard/modern")
+    .then(res => res.data)
+    .catch(err => handleApiError(err, "Failed to load modern dashboard data."));
+};
+
 // --- Filter Data ---
 export const getDashboardFilters = () => {
   return API.get("/dashboard/filters")

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { toast } from "react-toastify";
 import { getRoleId } from "../utils/auth";
 import { submitLeave, getMyLeaves, getAllLeaves, updateLeaveStatus } from "../services/leaveService";
@@ -14,7 +14,7 @@ import { DatePicker } from "../components/ui/date-picker"; // Import DatePicker
 import { Skeleton } from "../components/ui/skeleton"; // Import Skeleton
 import { format } from "date-fns"; // Import format for dates
 
-import { CalendarDays, Briefcase, Check, X, Hourglass } from "lucide-react";
+import { CalendarDays, Check, X, Hourglass } from "lucide-react";
 
 const TableSkeleton = ({ rows = 5, cols = 5 }) => (
   <Table>
@@ -68,7 +68,7 @@ export default function Leave() {
   const leaveBalance = 15;
   const pendingRequests = leaves.filter(l => l.status === 'Pending').length;
 
-  const loadLeaves = async () => {
+  const loadLeaves = useCallback(async () => {
     setLoading(true); // Set loading true
     try {
       const data = isAdmin ? await getAllLeaves() : await getMyLeaves();
@@ -78,11 +78,11 @@ export default function Leave() {
     } finally {
       setLoading(false); // Set loading false
     }
-  };
+  }, [isAdmin]);
 
   useEffect(() => {
     loadLeaves();
-  }, [isAdmin, view]); // Add view to dependency array to reload on view change
+  }, [loadLeaves, view]); // Add view to dependency array to reload on view change
 
   const handleSubmit = async (e) => {
     e.preventDefault();

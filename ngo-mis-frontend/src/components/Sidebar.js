@@ -5,7 +5,6 @@ import {
   LayoutDashboard,
   FileText,
   CalendarCheck,
-  Plane,
   History,
   Landmark,
   LogOut,
@@ -14,7 +13,6 @@ import {
   Users,
   Contact, // For Employee Directory
   DollarSign,
-  CalendarClock,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion"; // Added Accordion imports
@@ -58,15 +56,15 @@ export default function Sidebar() {
   ].filter(Boolean); // Filter out falsy values from conditional items
 
   return (
-    <div className="hidden border-r bg-muted/40 md:block">
+    <div className="hidden border-r bg-muted/40 md:block relative">
       <div className="flex h-full max-h-screen flex-col gap-2">
         <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
           <NavLink to="/" className="flex items-center gap-2 font-semibold">
             <span className="">TGF Nexus360</span>
           </NavLink>
         </div>
-        <div className="flex-1">
-          <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+        <div className="flex-1 overflow-auto">
+          <nav className="grid items-start px-2 text-sm font-medium lg:px-4 pb-16">
             {navItems.map((item, index) => (
               item.children ? (
                 <Accordion type="single" collapsible key={index}>
@@ -111,7 +109,7 @@ export default function Sidebar() {
             ))}
           </nav>
         </div>
-        <div className="mt-auto p-4">
+        <div className="absolute bottom-0 w-full p-4">
           <Button size="sm" className="w-full" variant="destructive" onClick={logout}>
             <LogOut className="mr-2 h-4 w-4" />
             Logout

@@ -9,7 +9,7 @@ import { Label } from "../components/ui/label";
 import { Loader2 } from "lucide-react";
 import API from "../services/api"; // To get base URL for photo display
 import { Skeleton } from "../components/ui/skeleton"; // Import Skeleton
-import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"; // Import Avatar
+
 
 export default function MyProfile() {
   const [profileData, setProfileData] = useState(null);
@@ -186,11 +186,11 @@ export default function MyProfile() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="joining_date">Joining Date</Label>
-                <Input id="joining_date" value={new Date(profileData.joining_date).toLocaleDateString()} readOnly />
+                <Input id="joining_date" value={profileData.joining_date ? new Date(profileData.joining_date).toLocaleDateString() : 'N/A'} readOnly />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="salary">Salary</Label>
-                <Input id="salary" value={`₹${profileData.salary.toLocaleString('en-IN')}`} readOnly />
+                <Input id="salary" value={profileData.salary != null ? `₹${profileData.salary.toLocaleString('en-IN')}` : 'N/A'} readOnly />
               </div>
             </div>
 

@@ -160,64 +160,6 @@ router.post(
   }
 );
 
-// Get all employees
-router.get("/employees/all", verifyToken, async (req, res) => {
-  try {
-    const [rows] = await db.promise().query(`
-      SELECT 
-        e.id, 
-        e.emp_code, 
-        e.joining_date, 
-        e.phone,
-        e.photo_path,
-        u.name, 
-        u.email,
-        d.name as department,
-        desg.title as designation
-      FROM employees e
-      JOIN users u ON e.user_id = u.id
-      LEFT JOIN departments d ON e.department_id = d.id
-      LEFT JOIN designations desg ON e.designation_id = desg.id
-      ORDER BY u.name
-    `);
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message || "Failed to fetch employees." });
-  }
-});
-
-// Get single employee by ID
-router.get("/employees/:id", verifyToken, async (req, res) => {
-  const { id } = req.params;
-  try {
-    const [rows] = await db.promise().query(`
-      SELECT 
-        e.id, 
-        e.emp_code, 
-        e.joining_date, 
-        e.phone,
-        e.address,
-        e.photo_path,
-        u.name, 
-        u.email,
-        d.name as department,
-        desg.title as designation
-      FROM employees e
-      JOIN users u ON e.user_id = u.id
-      LEFT JOIN departments d ON e.department_id = d.id
-      LEFT JOIN designations desg ON e.designation_id = desg.id
-      WHERE e.id = ?
-    `, [id]);
-
-    if (rows.length === 0) {
-      return res.status(404).json({ error: "Employee not found." });
-    }
-    res.json(rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: err.message || "Failed to fetch employee." });
-  }
-});
-
 
 /* =========================================================
    EMPLOYEE PROFILE (Self-Service)
@@ -313,6 +255,64 @@ router.put(
     }
   }
 );
+
+// Get all employees
+router.get("/employees/all", verifyToken, async (req, res) => {
+  try {
+    const [rows] = await db.promise().query(`
+      SELECT 
+        e.id, 
+        e.emp_code, 
+        e.joining_date, 
+        e.phone,
+        e.photo_path,
+        u.name, 
+        u.email,
+        d.name as department,
+        desg.title as designation
+      FROM employees e
+      JOIN users u ON e.user_id = u.id
+      LEFT JOIN departments d ON e.department_id = d.id
+      LEFT JOIN designations desg ON e.designation_id = desg.id
+      ORDER BY u.name
+    `);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message || "Failed to fetch employees." });
+  }
+});
+
+// Get single employee by ID
+router.get("/employees/:id", verifyToken, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [rows] = await db.promise().query(`
+      SELECT 
+        e.id, 
+        e.emp_code, 
+        e.joining_date, 
+        e.phone,
+        e.address,
+        e.photo_path,
+        u.name, 
+        u.email,
+        d.name as department,
+        desg.title as designation
+      FROM employees e
+      LEFT JOIN users u ON e.user_id = u.id
+      LEFT JOIN departments d ON e.department_id = d.id
+      LEFT JOIN designations desg ON e.designation_id = desg.id
+      WHERE e.id = ?
+    `, [id]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Employee not found." });
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message || "Failed to fetch employee." });
+  }
+});
 
 
 module.exports = router;
