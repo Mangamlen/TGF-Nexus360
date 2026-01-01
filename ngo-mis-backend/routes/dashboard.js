@@ -348,10 +348,10 @@ router.get("/modern", verifyToken, allowRoles([1, 2, 5]), async (req, res) => {
     ]);
 
     res.json({
-      approvedReportsCount: approvedReportsCount[0][0].approved_reports_count,
+      approvedReportsCount: approvedReportsCount[0][0]?.approved_reports_count || 0,
       attendanceStats: attendanceStats[0],
       leaveStatus: leaveStatus[0],
-      foActivityCount: foActivityCount[0][0].fo_activity_count,
+      foActivityCount: foActivityCount[0][0]?.fo_activity_count || 0,
       attendanceTrends: attendanceTrends[0],
       monthlyLeaves: monthlyLeaves[0],
       reportStatus: reportStatus[0],
