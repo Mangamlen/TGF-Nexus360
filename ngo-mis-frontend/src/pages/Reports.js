@@ -149,7 +149,7 @@ export default function Reports() {
         {(isAdmin || isManager || roleId === 5) && (
           <Dialog open={dialogs.submit} onOpenChange={(isOpen) => setDialogs(p => ({...p, submit: isOpen}))}>
             <DialogTrigger asChild>
-              <Button>Generate Report</Button>
+              <Button variant="secondary">Generate Report</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -176,7 +176,7 @@ export default function Reports() {
                   <Input type="file" name="file" id="file" onChange={handleFormChange} />
                 </div>
                 <DialogFooter>
-                  <Button type="submit" disabled={isSubmitting}>
+                  <Button type="submit" disabled={isSubmitting} variant="secondary">
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Submit Report
                   </Button>
@@ -225,7 +225,7 @@ export default function Reports() {
                         <History className="h-4 w-4" />
                       </Button>
                       {isAdmin && report.status === 'Submitted' && (
-                        <Button size="sm" onClick={() => handleApprove(report)}><Check className="mr-1 h-4 w-4" />Approve</Button>
+                        <Button size="sm" onClick={() => handleApprove(report)} variant="secondary"><Check className="mr-1 h-4 w-4" />Approve</Button>
                       )}
                       {(isAdmin || isManager) && report.status === 'Approved' && (
                         <Button size="sm" variant="secondary" onClick={() => handleLock(report)}><Lock className="mr-1 h-4 w-4" />Lock</Button>

@@ -2,15 +2,34 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const db = require("./db");
+const passport = require("passport");
+const session = require("express-session"); // For session management
+require("./config/passport-setup"); // Import passport configuration
+
 console.log("Loaded JWT_SECRET:", process.env.JWT_SECRET);
 
 const app = express();
 
 app.use(cors({
-  origin: "http://localhost:3000" // Allow requests from your frontend origin
+  origin: "http://localhost:3000", // Allow requests from your frontend origin
+  credentials: true // Allow sending cookies from frontend
 }));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+
+// Configure session middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET || "averysecretkey", // Use a strong secret from .env
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    maxAge: 24 * 60 * 60 * 1000 // 1 day
+  }
+}));
+
+// Initialize Passport and use session middleware
+app.use(passport.initialize());
+app.use(passport.session());
 
 const authRoutes = require("./routes/auth");
 const hrRoutes = require("./routes/hr");
@@ -60,3 +79,4 @@ app.use((err, req, res, next) => {
     error: "Internal server error"
   });
 });
+

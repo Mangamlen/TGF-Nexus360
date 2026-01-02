@@ -26,36 +26,45 @@ module.exports = {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "hsl(var(--primary))", // Emerald Green
+          foreground: "hsl(var(--primary-foreground))", // Soft White
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: "hsl(var(--secondary))", // Muted Teal
+          foreground: "hsl(var(--secondary-foreground))", // Soft White
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "hsl(var(--destructive))", // Rejected Red
+          foreground: "hsl(var(--destructive-foreground))", // Soft White
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "hsl(var(--muted))", // Darker Navy
+          foreground: "hsl(var(--muted-foreground))", // Locked Gray
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "hsl(var(--accent))", // Muted Teal
+          foreground: "hsl(var(--accent-foreground))", // Soft White
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+          DEFAULT: "hsl(var(--popover))", // Soft White
+          foreground: "hsl(var(--popover-foreground))", // Deep Navy
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          DEFAULT: "hsl(var(--card))", // Soft White
+          foreground: "hsl(var(--card-foreground))", // Deep Navy
         },
+        
+        // Status Colors - map directly to new status variables
         'status-approved': 'hsl(var(--status-approved))',
-        'status-rejected': 'hsl(var(--status-rejected))',
         'status-pending': 'hsl(var(--status-pending))',
+        'status-rejected': 'hsl(var(--status-rejected))',
+        'status-locked': 'hsl(var(--status-locked))',
+        
+        // Custom color names for clarity (optional, but good for design system)
+        'deep-navy': 'hsl(var(--background))',
+        'soft-white': 'hsl(var(--card))',
+        'emerald-green': 'hsl(var(--primary))',
+        'muted-teal': 'hsl(var(--secondary))',
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -64,6 +73,7 @@ module.exports = {
       },
       boxShadow: {
         soft: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+        'soft-lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', // A slightly more pronounced but soft shadow
       },
       keyframes: {
         "accordion-down": {
@@ -81,5 +91,17 @@ module.exports = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    function ({ addUtilities, theme }) {
+      addUtilities({
+        '.hover\\:button-glow-primary:hover': {
+          boxShadow: `0 0 15px -3px hsl(var(--primary)), 0 0 5px hsl(var(--primary))`,
+        },
+        '.glow-primary-subtle': {
+          boxShadow: `0 0 8px -2px hsl(var(--primary)), 0 0 3px hsl(var(--primary))`,
+        },
+      });
+    },
+  ],
 }

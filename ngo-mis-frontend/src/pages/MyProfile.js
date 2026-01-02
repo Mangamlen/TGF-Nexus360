@@ -220,7 +220,7 @@ export default function MyProfile() {
             </div>
 
             <div className="md:col-span-2">
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} variant="secondary">
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Update Profile
               </Button>

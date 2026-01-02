@@ -25,6 +25,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { DatePicker } from "../components/ui/date-picker"; // Import the new DatePicker
 import { Skeleton } from "../components/ui/skeleton"; // Import Skeleton
 import { format } from "date-fns";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css"; // Default styles for react-calendar
 
 const TableSkeleton = ({ rows = 5, cols = 5 }) => (
   <Table>
@@ -55,6 +57,8 @@ export default function Attendance() {
   const [adminAttendanceRecords, setAdminAttendanceRecords] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
+  const [calendarDate, setCalendarDate] = useState(new Date()); // State for the calendar's current month/year
+  const [allEvents, setAllEvents] = useState([]); // Combined attendance and leave for calendar overlay
 
   /* =========================
      HELPER FUNCTIONS
@@ -96,11 +100,32 @@ export default function Attendance() {
   ========================= */
   const loadHistory = async () => {
     try {
-      const res = await API.get("/attendance/history");
-      setHistory(res.data || []);
+      const [attendanceRes, leaveRes] = await Promise.all([
+        API.get("/attendance/history"),
+        API.get("/leave/my") // Fetch user's leave history
+      ]);
+      setHistory(attendanceRes.data || []);
+      
+      const combinedEvents = [
+        ...(attendanceRes.data || []).map(item => ({
+          date: item.attendance_date,
+          type: 'attendance',
+          status: item.status,
+          check_in: item.check_in,
+          check_out: item.check_out
+        })),
+        ...(leaveRes.data || []).map(item => ({
+          date: item.start_date, // Start date of leave
+          end_date: item.end_date, // End date of leave
+          type: 'leave',
+          status: item.status,
+          leave_type: item.leave_type
+        }))
+      ];
+      setAllEvents(combinedEvents); // Set combined events for calendar
     } catch (err) {
-      console.error("Failed to load attendance history", err);
-      toast.error("Failed to load attendance history");
+      console.error("Failed to load attendance history or leaves", err);
+      toast.error("Failed to load history or leaves");
     }
   };
 
@@ -110,11 +135,34 @@ export default function Attendance() {
   const loadAllAttendanceRecords = async () => {
     setLoading(true);
     try {
-      const res = await API.get("/attendance/admin/all");
-      setAdminAttendanceRecords(res.data || []);
+      const [attendanceRes, leaveRes] = await Promise.all([
+        API.get("/attendance/admin/all"),
+        API.get("/leave") // Fetch all leave records for admin
+      ]);
+      setAdminAttendanceRecords(attendanceRes.data || []);
+
+      const combinedEvents = [
+        ...(attendanceRes.data || []).map(item => ({
+          date: item.attendance_date,
+          type: 'attendance',
+          status: item.status,
+          check_in: item.check_in,
+          check_out: item.check_out,
+          employee_name: item.employee_name
+        })),
+        ...(leaveRes.data || []).map(item => ({
+          date: item.start_date, // Start date of leave
+          end_date: item.end_date, // End date of leave
+          type: 'leave',
+          status: item.status,
+          leave_type: item.leave_type,
+          employee_name: item.user_name // Note: leave API returns user_name
+        }))
+      ];
+      setAllEvents(combinedEvents); // Set combined events for calendar
     } catch (err) {
-      console.error("Failed to load all attendance records", err);
-      toast.error("Failed to load all attendance records");
+      console.error("Failed to load all attendance records or leaves", err);
+      toast.error("Failed to load all records or leaves");
     } finally {
       setLoading(false);
     }
@@ -153,64 +201,72 @@ export default function Attendance() {
   };
 
   /* =========================
-     MODAL EDIT HANDLERS (ADMIN)
+     MODAL EDIT HANDLERS (ADMIN) - Remaining (correct) instance
   ========================= */
-  const handleEditClick = (record) => {
-    setEditingRecord({
-      ...record,
-      date: record.attendance_date ? new Date(record.attendance_date) : null, // Date object for DatePicker
-      check_in_time: formatTimeForInput(record.check_in),
-      check_out_time: formatTimeForInput(record.check_out),
-    });
-    setIsModalOpen(true);
+
+  /* =========================
+     CALENDAR HELPERS
+  ========================= */
+  const isSameDay = (a, b) => {
+    if (!a || !b) return false;
+    const dateA = new Date(a);
+    const dateB = new Date(b);
+    return dateA.getFullYear() === dateB.getFullYear() &&
+           dateA.getMonth() === dateB.getMonth() &&
+           dateA.getDate() === dateB.getDate();
   };
 
-  const handleModalChange = (e) => {
-    const { name, value } = e.target;
-    setEditingRecord((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleModalDateChange = (date) => {
-    setEditingRecord((prev) => ({ ...prev, date: date }));
-  };
-
-  const handleModalStatusChange = (value) => {
-    setEditingRecord((prev) => ({ ...prev, status: value }));
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingRecord(null);
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editingRecord.date || !editingRecord.check_in_time) {
-      toast.error("Date and Check-in time are required.");
-      return;
+  const getTileClassName = ({ date, view }) => {
+    if (view === 'month') {
+      const dayEvents = allEvents.filter(event => isSameDay(event.date, date) || (event.type === 'leave' && isSameDay(event.end_date, date)));
+      
+      if (dayEvents.some(event => event.type === 'leave' && event.status === 'Approved')) {
+        return 'bg-status-approved/20'; // Light green for approved leave
+      }
+      if (dayEvents.some(event => event.type === 'leave' && event.status === 'Pending')) {
+        return 'bg-status-pending/20'; // Light yellow for pending leave
+      }
+      if (dayEvents.some(event => event.type === 'attendance' && event.status === 'Present')) {
+        return 'bg-secondary/10'; // Light green for attendance
+      }
+      if (dayEvents.some(event => event.type === 'attendance' && event.status === 'Absent')) {
+        return 'bg-destructive/10'; // Light red for absent
+      }
+      if (dayEvents.some(event => event.type === 'attendance' && event.status === 'Half Day')) {
+        return 'bg-status-pending/10'; // Light orange for half day
+      }
     }
+    return null;
+  };
 
-    setLoading(true);
-    try {
-      const updatedData = {
-        date: format(editingRecord.date, "yyyy-MM-dd"), // Format date for API
-        check_in: combineDateAndTime(editingRecord.date, editingRecord.check_in_time),
-        check_out: editingRecord.check_out_time
-          ? combineDateAndTime(editingRecord.date, editingRecord.check_out_time)
-          : null,
-        status: editingRecord.status,
-        gps_location: editingRecord.gps_location,
-      };
-
-      await API.put(`/attendance/admin/${editingRecord.id}`, updatedData);
-      toast.success("Attendance record updated successfully!");
-      handleCloseModal();
-      loadAllAttendanceRecords(); // Refresh the admin view
-    } catch (err) {
-      console.error("Failed to update attendance record", err);
-      toast.error(err.response?.data?.error || "Failed to update record.");
-    } finally {
-      setLoading(false);
+  const getTileContent = ({ date, view }) => {
+    if (view === 'month') {
+      const dayEvents = allEvents.filter(event => isSameDay(event.date, date) || (event.type === 'leave' && isSameDay(event.end_date, date)));
+      
+      return (
+        <div className="flex flex-col text-[8px] leading-tight mt-1 items-center justify-center">
+          {dayEvents.map((event, index) => {
+            if (event.type === 'attendance') {
+              let icon = null;
+              let colorClass = 'text-muted-foreground';
+              if (event.status === 'Present') { icon = 'P'; colorClass = 'text-status-approved'; }
+              if (event.status === 'Absent') { icon = 'A'; colorClass = 'text-destructive'; }
+              if (event.status === 'Half Day') { icon = 'H'; colorClass = 'text-status-pending'; }
+              return <span key={index} className={colorClass}>{icon}{isAdmin ? ` (${event.employee_name.split(' ')[0]})` : ''}</span>;
+            } else if (event.type === 'leave') {
+              let icon = null;
+              let colorClass = 'text-muted-foreground';
+              if (event.status === 'Approved') { icon = 'L✓'; colorClass = 'text-status-approved'; }
+              if (event.status === 'Pending') { icon = 'L?'; colorClass = 'text-status-pending'; }
+              if (event.status === 'Rejected') { icon = 'L✗'; colorClass = 'text-destructive'; }
+              return <span key={index} className={colorClass}>{icon}{isAdmin ? ` (${event.employee_name.split(' ')[0]})` : ''}</span>;
+            }
+            return null;
+          })}
+        </div>
+      );
     }
+    return null;
   };
 
   /* =========================
@@ -220,16 +276,37 @@ export default function Attendance() {
     const roleId = getRoleId();
     if (roleId === 1) { // Assuming role_id 1 is admin
       setIsAdmin(true);
-      loadAllAttendanceRecords();
+      loadAllAttendanceRecords(); // This now loads attendance and leaves
     } else {
       loadTodayStatus();
-      loadHistory();
+      loadHistory(); // This now loads attendance and leaves
     }
-  }, []);
+  }, []); // Empty dependency array means it runs once on mount
 
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold mb-4">Attendance</h2>
+
+      {/* --- Calendar View --- */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Attendance & Leave Calendar</CardTitle>
+          <CardDescription>Visual overview of employee attendance and leave requests.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="w-full">
+            <Calendar
+              onChange={setCalendarDate}
+              value={calendarDate}
+              tileClassName={getTileClassName}
+              tileContent={getTileContent}
+              view="month"
+              locale="en-US" // or your preferred locale
+              className="react-calendar-themed"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {!isAdmin ? (
         <>
@@ -250,7 +327,7 @@ export default function Attendance() {
               </p>
               <div className="flex gap-2">
                 {!status.check_in && (
-                  <Button onClick={checkIn} disabled={loading}>
+                  <Button onClick={checkIn} disabled={loading} variant="secondary">
                     Check In
                   </Button>
                 )}
@@ -470,7 +547,7 @@ export default function Attendance() {
                   <Button variant="outline" onClick={handleCloseModal}>
                     Cancel
                   </Button>
-                  <Button onClick={handleSaveEdit} disabled={loading}>
+                  <Button onClick={handleSaveEdit} disabled={loading} variant="secondary">
                     Save changes
                   </Button>
                 </DialogFooter>

@@ -32,10 +32,11 @@ router.post("/", verifyToken, allowRoles([1, 2, 5]), (req, res) => {
 =========================== */
 router.get("/my", verifyToken, (req, res) => {
   db.query(
-    `SELECT *
-     FROM leave_requests
-     WHERE user_id = ?
-     ORDER BY requested_on DESC`,
+    `SELECT lr.*, u.name AS user_name, lr.admin_remarks
+     FROM leave_requests lr
+     JOIN users u ON lr.user_id = u.id
+     WHERE lr.user_id = ?
+     ORDER BY lr.requested_on DESC`,
     [req.user.id],
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -49,7 +50,7 @@ router.get("/my", verifyToken, (req, res) => {
 =========================== */
 router.get("/", verifyToken, allowRoles([1, 2]), (req, res) => {
   db.query(
-    `SELECT lr.*, u.name AS user_name
+    `SELECT lr.*, u.name AS user_name, lr.admin_remarks
      FROM leave_requests lr
      JOIN users u ON lr.user_id = u.id
      ORDER BY lr.requested_on DESC`,
@@ -61,23 +62,51 @@ router.get("/", verifyToken, allowRoles([1, 2]), (req, res) => {
 });
 
 /* ===========================
-   APPROVE / REJECT LEAVE
+   APPROVE / REJECT LEAVE (with remarks)
 =========================== */
 router.put("/:id", verifyToken, allowRoles([1, 2]), (req, res) => {
-  const { status } = req.body;
+  const { status, admin_remarks } = req.body;
 
   if (!["Approved", "Rejected"].includes(status)) {
     return res.status(400).json({ error: "Invalid status" });
   }
 
   db.query(
-    "UPDATE leave_requests SET status=? WHERE id=?",
-    [status, req.params.id],
+    "UPDATE leave_requests SET status=?, admin_remarks=? WHERE id=?",
+    [status, admin_remarks, req.params.id],
     err => {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ message: "Leave status updated" });
     }
   );
+});
+
+/* ===========================
+   GET LEAVE ENTITLEMENT (Placeholder)
+=========================== */
+router.get("/entitlement/:userId", verifyToken, allowRoles([1, 2, 3, 5]), async (req, res) => {
+  const { userId } = req.params;
+  // In a real application, you would fetch this from a database
+  // e.g., from a leave_quotas table or employee settings
+  const annualQuota = 20; // Example
+  const consumedLeave = await new Promise((resolve, reject) => {
+    db.query(
+      `SELECT COUNT(id) AS consumed 
+       FROM leave_requests 
+       WHERE user_id = ? AND status = 'Approved' AND YEAR(start_date) = YEAR(CURDATE())`,
+      [userId],
+      (err, results) => {
+        if (err) reject(err);
+        resolve(results[0].consumed);
+      }
+    );
+  });
+
+  res.json({
+    annualQuota: annualQuota,
+    consumed: consumedLeave,
+    remaining: annualQuota - consumedLeave
+  });
 });
 
 module.exports = router;

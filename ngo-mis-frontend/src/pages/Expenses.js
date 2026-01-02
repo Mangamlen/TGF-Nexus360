@@ -194,7 +194,7 @@ export default function Expenses() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Expense Management</h1>
-        <Button onClick={openAddModal}>Add New Expense</Button>
+        <Button onClick={openAddModal} variant="secondary">Add New Expense</Button>
       </div>
       <Card>
         <CardHeader>
@@ -244,7 +244,7 @@ export default function Expenses() {
                         <Button variant="destructive" size="sm" onClick={() => handleDelete(expense.id)}>Delete</Button>
                         {expense.status === "Pending" && (isAdmin || isManager) && (
                           <>
-                            <Button variant="default" size="sm" onClick={() => handleApproveReject(expense.id, "Approved")}>Approve</Button>
+                            <Button variant="secondary" size="sm" onClick={() => handleApproveReject(expense.id, "Approved")}>Approve</Button>
                             <Button variant="secondary" size="sm" onClick={() => handleApproveReject(expense.id, "Rejected")}>Reject</Button>
                           </>
                         )}
@@ -332,7 +332,7 @@ export default function Expenses() {
               />
             </div>
             <DialogFooter>
-              <Button type="submit">{currentExpense ? "Save changes" : "Add Expense"}</Button>
+              <Button type="submit" variant="secondary">{currentExpense ? "Save changes" : "Add Expense"}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

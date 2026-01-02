@@ -1,6 +1,7 @@
 const express = require("express");
 const db = require("../db");
 const { verifyToken, allowRoles } = require("../middleware/authMiddleware");
+const { generatePayslipPdf } = require("../utils/payslipGenerator"); // Import the PDF generator
 
 const router = express.Router();
 
@@ -112,8 +113,21 @@ router.get("/history", verifyToken, allowRoles([1, 2]), (req, res) => {
 
 router.get("/slip/:employee_id/:month/:year", verifyToken, async (req, res) => {
   const { employee_id, month, year } = req.params;
+  const authUserId = req.user.id;
+  const authRoleId = req.user.role_id;
 
   try {
+    const [employeeUser] = await db.promise().query("SELECT user_id FROM employees WHERE id = ?", [employee_id]);
+    if (employeeUser.length === 0) {
+      return res.status(404).json({ message: "Employee not found." });
+    }
+    const payslipUserId = employeeUser[0].user_id;
+
+    // Allow self-access or admin/manager access
+    if (payslipUserId !== authUserId && !(authRoleId === 1 || authRoleId === 2)) {
+      return res.status(403).json({ error: "Forbidden: You can only view your own payslips or require admin/manager privileges." });
+    }
+
     const sql = `
       SELECT
         pr.id AS payroll_record_id,
@@ -152,6 +166,72 @@ router.get("/slip/:employee_id/:month/:year", verifyToken, async (req, res) => {
     res.status(500).json({ error: "An unexpected error occurred while fetching payslip." });
   }
 });
+
+// New endpoint for PDF payslip download
+router.get("/payslip/download/:employee_id/:month/:year", verifyToken, async (req, res) => {
+  const { employee_id, month, year } = req.params;
+  const authUserId = req.user.id;
+  const authRoleId = req.user.role_id;
+
+  try {
+    // Check authorization: employee can download their own, admin/manager can download anyone's
+    const [employeeUser] = await db.promise().query("SELECT user_id FROM employees WHERE id = ?", [employee_id]);
+    if (employeeUser.length === 0) {
+      return res.status(404).json({ message: "Employee not found." });
+    }
+    const payslipUserId = employeeUser[0].user_id;
+
+    if (payslipUserId !== authUserId && !(authRoleId === 1 || authRoleId === 2)) {
+      return res.status(403).json({ error: "Forbidden: You can only download your own payslips or require admin/manager privileges." });
+    }
+
+    // Fetch payslip data
+    const sql = `
+      SELECT
+        pr.id AS payroll_record_id,
+        pr.month,
+        pr.year,
+        pr.total_present,
+        pr.net_salary,
+        pr.generated_on,
+        e.emp_code,
+        e.joining_date,
+        u.name AS employee_name,
+        u.email AS employee_email,
+        d.name AS department_name,
+        dg.title AS designation_title,
+        ss.basic,
+        ss.hra,
+        ss.allowance,
+        ss.deduction
+      FROM payroll_records pr
+      JOIN employees e ON pr.employee_id = e.id
+      JOIN users u ON e.user_id = u.id
+      LEFT JOIN departments d ON e.department_id = d.id
+      LEFT JOIN designations dg ON e.designation_id = dg.id
+      LEFT JOIN salary_structures ss ON e.id = ss.employee_id
+      WHERE pr.employee_id = ? AND pr.month = ? AND pr.year = ?;
+    `;
+
+    const [payslipData] = await db.promise().query(sql, [employee_id, month, year]);
+
+    if (payslipData.length === 0) {
+      return res.status(404).json({ message: "Payslip data not found for PDF generation." });
+    }
+
+    const pdfBuffer = await generatePayslipPdf(payslipData[0]);
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="payslip_${employee_id}_${month}_${year}.pdf"`);
+    res.send(pdfBuffer);
+
+  } catch (error) {
+    console.error("Error generating payslip PDF:", error);
+    res.status(500).json({ error: "Failed to generate payslip PDF." });
+  }
+});
+
+
 router.get("/report/:month/:year", (req, res) => {
   const { month, year } = req.params;
 

@@ -4,59 +4,63 @@
 
 @layer base {
   :root {
-    --background: 231 43% 97%; /* #F5F6FA - Light Gray */
-    --foreground: 220 14% 10%; /* #1A1A1A - Dark Gray */
-    --card: 0 0% 100%; /* White for light mode card */
-    --card-foreground: 220 14% 10%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 14% 10%;
-    --primary: 233 66% 30%; /* #1E2A78 - Deep Blue */
-    --primary-foreground: 210 20% 98%; /* Near white */
-    --secondary: 182 100% 39%; /* #00C2C7 - Aqua/Teal */
-    --secondary-foreground: 220 14% 10%; /* Dark Gray */
-    --muted: 220 14.3% 95.9%; /* Retain a light gray for muted elements */
-    --muted-foreground: 220 4% 44%; /* #6F6F6F - Muted Gray */
-    --accent: 182 100% 39%; /* Aqua/Teal */
-    --accent-foreground: 220 14% 10%; /* Dark Gray */
-    --destructive: 350 78% 68%; /* #D64545 - Rejected Red */
-    --destructive-foreground: 210 20% 98%;
-    --border: 220 13% 91%; /* Light border */
-    --input: 220 13% 91%; /* Light input border */
-    --ring: 233 66% 30%; /* Deep Blue */
-    --radius: 0.75rem; /* 12px for rounded corners */
+    --background: 180 11% 97%; /* #F7F9F8 - Soft White (Main background) */
+    --foreground: 207 51% 10%; /* #0B1F2A - Deep Navy (Main text on light background) */
+    --card: 180 11% 97%; /* #F7F9F8 - Soft White (Card surfaces) */
+    --card-foreground: 207 51% 10%; /* Deep Navy for text on cards */
+    --popover: 180 11% 97%;
+    --popover-foreground: 207 51% 10%;
+    --primary: 148 64% 50%; /* #2ECC71 - Emerald Green (Primary actions) */
+    --primary-foreground: 0 0% 100%; /* White */
+    --secondary: 173 33% 50%; /* #4DB6AC - Muted Teal (Secondary actions) */
+    --secondary-foreground: 0 0% 100%; /* White */
+    --muted: 180 11% 90%; /* A slightly darker soft white for muted elements */
+    --muted-foreground: 195 8% 52%; /* #7F8C8D - Locked gray for muted text */
+    --accent: 173 33% 50%; /* Muted Teal */
+    --accent-foreground: 207 51% 10%; /* Deep Navy */
+    --destructive: 5 76% 57%; /* #E74C3C - Rejected Red */
+    --destructive-foreground: 0 0% 100%; /* White */
+    --border: 207 51% 20%; /* Darker Navy for borders on light background */
+    --input: 180 11% 90%; /* Slightly darker soft white for input backgrounds */
+    --ring: 148 64% 50%; /* Emerald Green for focus ring */
+    --radius: 1rem; /* 16px for rounded corners */
 
     /* Custom Status Colors */
-    --status-approved: 147 64% 41%; /* #29A36A - Green */
-    --status-rejected: 350 78% 68%; /* #D64545 - Red */
-    --status-pending: 40 85% 52%; /* #E7A322 - Yellow */
+    --status-approved: 148 64% 50%; /* #2ECC71 - Emerald Green */
+    --status-rejected: 5 76% 57%; /* #E74C3C - Rejected Red */
+    --status-pending: 43 89% 57%; /* #F4C430 - Pending Yellow */
+    --status-locked: 195 8% 52%; /* #7F8C8D - Locked Gray */
+    --soft-teal: 173 33% 50%; /* #4DB6AC - Soft Teal (same as secondary) */
   }
 
   .dark {
-    --background: 220 14% 10%; /* #1A1A1A - Dark Gray */
-    --foreground: 231 43% 97%; /* Light Gray */
-    --card: 220 14% 15%; /* Slightly darker than background for contrast */
-    --card-foreground: 231 43% 97%;
-    --popover: 220 14% 15%;
-    --popover-foreground: 231 43% 97%;
-    --primary: 233 66% 30%; /* #1E2A78 - Deep Blue (same as light, or slightly adjusted) */
-    --primary-foreground: 210 20% 98%;
-    --secondary: 182 100% 39%; /* #00C2C7 - Aqua/Teal (same as light) */
-    --secondary-foreground: 231 43% 97%;
-    --muted: 220 14% 20%; /* Darker muted */
-    --muted-foreground: 220 4% 65%; /* Lighter muted gray */
-    --accent: 182 100% 39%;
-    --accent-foreground: 231 43% 97%;
-    --destructive: 350 78% 68%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 220 14% 25%; /* Darker border */
-    --input: 220 14% 25%; /* Darker input border */
-    --ring: 233 66% 30%;
-    --radius: 0.75rem;
-
-    /* Custom Status Colors for dark mode - adjust if needed for contrast */
-    --status-approved: 147 64% 41%;
-    --status-rejected: 350 78% 68%;
-    --status-pending: 40 85% 52%;
+    --background: 207 51% 10%; /* #0B1F2A - Deep Navy (Dark theme background) */
+    --foreground: 180 11% 97%; /* #F7F9F8 - Soft White */
+    --card: 207 51% 15%; /* Slightly lighter navy for dark mode cards */
+    --card-foreground: 180 11% 97%; /* Soft White */
+    --popover: 207 51% 15%;
+    --popover-foreground: 180 11% 97%;
+    --primary: 148 64% 50%; /* #2ECC71 - Emerald Green */
+    --primary-foreground: 0 0% 100%; /* White */
+    --secondary: 173 33% 50%; /* #4DB6AC - Muted Teal */
+    --secondary-foreground: 0 0% 100%; /* White */
+    --muted: 207 51% 18%; /* Darker muted for dark mode */
+    --muted-foreground: 195 8% 52%; /* #7F8C8D - Locked gray for muted text */
+    --accent: 173 33% 50%; /* Muted Teal */
+    --accent-foreground: 0 0% 100%; /* White */
+    --destructive: 5 76% 57%; /* #E74C3C - Rejected Red */
+    --destructive-foreground: 0 0% 100%; /* White */
+    --border: 207 51% 25%; /* Slightly lighter darker navy for borders */
+    --input: 207 51% 18%; /* Muted navy for input backgrounds */
+    --ring: 148 64% 50%; /* Emerald Green */
+    --radius: 1rem;
+    
+    /* Custom Status Colors - should be consistent or slightly adjusted for dark mode if contrast is an issue */
+    --status-approved: 148 64% 50%;
+    --status-rejected: 5 76% 57%;
+    --status-pending: 43 89% 57%;
+    --status-locked: 195 8% 52%;
+    --soft-teal: 173 33% 50%;
   }
 }
 
@@ -67,5 +71,6 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "liga" on, "calt" on;
+    /* For Inter font, ensure it's loaded if not via Tailwind config directly */
   }
 }

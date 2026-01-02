@@ -9,13 +9,18 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+          "border-transparent bg-status-approved text-primary-foreground hover:bg-status-approved/80", // Default to Approved green
         secondary:
           "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
         destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
+          "border-transparent bg-status-rejected text-destructive-foreground hover:bg-status-rejected/80", // Explicitly use status-rejected
         outline: "text-foreground",
-        success: "border-transparent bg-green-500 text-white hover:bg-green-500/80",
+        
+        // New status variants based on theme
+        approved: "border-transparent bg-status-approved text-primary-foreground hover:bg-status-approved/80",
+        pending: "border-transparent bg-status-pending text-primary-foreground hover:bg-status-pending/80",
+        rejected: "border-transparent bg-status-rejected text-primary-foreground hover:bg-status-rejected/80",
+        locked: "border-transparent bg-status-locked text-primary-foreground hover:bg-status-locked/80",
       },
     },
     defaultVariants: {

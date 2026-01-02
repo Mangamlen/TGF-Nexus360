@@ -56,10 +56,10 @@ export default function Sidebar() {
   ].filter(Boolean); // Filter out falsy values from conditional items
 
   return (
-    <div className="hidden border-r bg-muted/40 md:block relative">
+    <div className="hidden border-r bg-background md:block relative"> {/* Changed bg-muted/40 to bg-background */}
       <div className="flex h-full max-h-screen flex-col gap-2">
-        <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-          <NavLink to="/" className="flex items-center gap-2 font-semibold">
+        <div className="flex h-14 items-center border-b border-muted px-4 lg:h-[60px] lg:px-6"> {/* Added border-muted for contrast */}
+          <NavLink to="/" className="flex items-center gap-2 font-semibold text-foreground"> {/* Changed text-primary to text-foreground */}
             <span className="">TGF Nexus360</span>
           </NavLink>
         </div>
@@ -69,7 +69,7 @@ export default function Sidebar() {
               item.children ? (
                 <Accordion type="single" collapsible key={index}>
                   <AccordionItem value={`item-${index}`} className="border-b-0">
-                    <AccordionTrigger className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
+                    <AccordionTrigger className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:button-glow-primary"> {/* Added hover:button-glow-primary */}
                       {item.icon}
                       {item.text}
                     </AccordionTrigger>
@@ -80,8 +80,8 @@ export default function Sidebar() {
                           to={child.to}
                           className={({ isActive }) =>
                             cn(
-                              "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary ml-6",
-                              isActive && "bg-muted text-primary"
+                              "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:button-glow-primary", // Added hover:button-glow-primary
+                              isActive && "bg-primary/20 text-primary glow-primary-subtle" // Changed bg-muted text-primary
                             )
                           }
                         >
@@ -97,8 +97,8 @@ export default function Sidebar() {
                   to={item.to}
                   className={({ isActive }) =>
                     cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-                      isActive && "bg-muted text-primary"
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:button-glow-primary", // Added hover:button-glow-primary
+                      isActive && "bg-primary/20 text-primary glow-primary-subtle" // Changed bg-muted text-primary
                     )
                   }
                 >

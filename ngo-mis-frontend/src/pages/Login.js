@@ -6,12 +6,12 @@ import { Button } from "../components/ui/button";
 
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { toast } from "react-toastify"; // Remove ToastContainer import
-import { Chrome, Github, Building } from "lucide-react"; // Building icon for logo
+import { toast } from "react-toastify";
+import { Chrome, Apple } from "lucide-react"; // Building icon for logo
 
 export default function Login() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState(false);
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -24,7 +24,11 @@ export default function Login() {
     try {
       const res = await API.post("/auth/login", { email, password });
       saveAuth(res.data.token, res.data.user.role_id, res.data.user.employee_id);
-      navigate("/reports");
+      if (res.data.user.role_id === 1) { // Assuming role_id 1 is Admin
+        navigate("/dashboard");
+      } else {
+        navigate("/reports");
+      }
     } catch (err) {
       toast.error(err.response?.data?.error || "Login failed");
     } finally {
@@ -36,7 +40,7 @@ export default function Login() {
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
       <div className="hidden bg-primary lg:flex lg:flex-col items-center justify-center text-primary-foreground p-12">
         <div className="text-center">
-            <Building className="h-16 w-16 mx-auto mb-4" />
+            <img src="/images/GF_logo.jpg" alt="GF Logo" className="h-24 w-24 mx-auto mb-4 rounded-lg shadow-lg" />
             <h1 className="text-4xl font-bold mb-2">TGF Nexus360</h1>
             <p className="text-lg text-primary-foreground/90">
                 Streamlining operations for a brighter future.
@@ -101,13 +105,15 @@ export default function Login() {
            </div>
            <div className="grid grid-cols-2 gap-4">
             <Button variant="outline">
-                <Github className="mr-2 h-4 w-4" />
-                GitHub
+                <Apple className="mr-2 h-4 w-4" />
+                Apple ID
             </Button>
-            <Button variant="outline">
-                <Chrome className="mr-2 h-4 w-4" />
-                Google
-            </Button>
+            <a href="http://localhost:5000/api/auth/google">
+              <Button variant="outline" className="w-full">
+                  <Chrome className="mr-2 h-4 w-4" />
+                  Google
+              </Button>
+            </a>
            </div>
         </div>
       </div>

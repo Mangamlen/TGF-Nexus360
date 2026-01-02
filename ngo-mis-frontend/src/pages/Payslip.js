@@ -125,10 +125,20 @@ const Payslip = () => {
             </SelectContent>
           </Select>
         </div>
-        <div className="flex items-end">
+        <div className="flex items-end gap-2"> {/* Added gap-2 for spacing between buttons */}
           <Button onClick={fetchPayslip} disabled={loading}>
             {loading ? "Fetching..." : "Fetch Payslip"}
           </Button>
+          {payslip && (
+            <a
+              href={`${API.defaults.baseURL}/payroll/payslip/download/${employeeId}/${month}/${year}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              download // Suggests browser to download the file
+            >
+              <Button variant="secondary">Download PDF</Button>
+            </a>
+          )}
         </div>
       </div>
 

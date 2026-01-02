@@ -1,7 +1,9 @@
 const express = require("express");
-const bcrypt = require("bcryptjs"); 
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const db = require("../db");
+const authController = require("../controllers/authController");
+const passport = require("passport"); // Import passport
 
 const router = express.Router();
 
@@ -81,4 +83,54 @@ router.post("/login", (req, res) => {
   });
 });
 
+/* =========================
+   FORGOT PASSWORD REQUEST
+========================= */
+router.post("/forgot-password", authController.forgotPassword);
+
+/* =========================
+   RESET PASSWORD
+========================= */
+router.post("/reset-password/:token", authController.resetPassword);
+
+/* =========================
+   GOOGLE OAUTH
+========================= */
+router.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+router.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    failureRedirect: "/login", // Redirect to login on failure
+    session: false // Do not use session for JWT authentication
+  }),
+  async (req, res) => {
+    // Successful authentication, generate JWT
+    const user = req.user; // User is available from passport.deserializeUser
+
+    let employee_id = null;
+    const [employeeRows] = await db.promise().query("SELECT id FROM employees WHERE user_id = ?", [user.id]);
+    if (employeeRows.length > 0) {
+      employee_id = employeeRows[0].id;
+    }
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        role_id: user.role_id,
+        employee_id: employee_id,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || "8h" }
+    );
+
+    // Redirect to frontend with token
+    res.redirect(`${process.env.CLIENT_URL}/auth/callback?token=${token}`);
+  }
+);
+
 module.exports = router;
+

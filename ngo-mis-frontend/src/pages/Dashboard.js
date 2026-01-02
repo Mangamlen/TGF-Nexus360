@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import * as dashboardService from "../services/dashboardService"; // Updated import
 import { getRoleId } from "../utils/auth";
 import {
@@ -39,14 +39,23 @@ import {
 } from "lucide-react";
 import { Skeleton } from "../components/ui/skeleton"; // Import Skeleton
 
-// Colors for the pie chart
-const COLORS = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b"];
+// Use theme colors for charts
+const CHART_COLORS = [
+  "hsl(var(--secondary))", // Eco Green
+  "hsl(var(--primary))",   // Navy Blue
+  "hsl(var(--accent))",    // Mint Green
+  "hsl(var(--soft-teal))", // Soft Teal
+  "hsl(var(--status-pending))", // Pending
+  "hsl(var(--status-rejected))", // Rejected
+  "hsl(var(--muted-foreground))", // Muted
+];
 
 const StatCard = ({ title, value, icon, description }) => (
-  <Card>
+  <Card className="relative overflow-hidden">
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
       <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      {icon}
+      {/* Icon faded in background (10% opacity) */}
+      {React.cloneElement(icon, { className: "absolute right-4 top-4 h-12 w-12 text-muted-foreground opacity-10" })}
     </CardHeader>
     <CardContent>
       <div className="text-2xl font-bold">{value}</div>
@@ -54,6 +63,7 @@ const StatCard = ({ title, value, icon, description }) => (
         <p className="text-xs text-muted-foreground">{description}</p>
       )}
     </CardContent>
+    <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-b-lg" /> {/* Emerald Green underline */}
   </Card>
 );
 
@@ -280,12 +290,12 @@ export default function Dashboard() {
               ) : modernData.attendanceTrends && modernData.attendanceTrends.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <RechartsLineChart data={modernData.attendanceTrends} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted-foreground))" /> {/* Darker gridlines */}
+                    <XAxis dataKey="date" stroke="hsl(var(--primary))" tick={{ fill: "hsl(var(--primary))" }} />
+                    <YAxis stroke="hsl(var(--primary))" tick={{ fill: "hsl(var(--primary))" }} />
+                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "none", borderRadius: "0.5rem", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }} /> {/* Rounded glass effect */}
                     <Legend />
-                    <Line type="monotone" dataKey="present_count" name="Present Employees" stroke={COLORS[0]} activeDot={{ r: 8 }} />
+                    <Line type="monotone" dataKey="present_count" name="Present Employees" stroke={CHART_COLORS[0]} activeDot={{ r: 8 }} />
                   </RechartsLineChart>
                 </ResponsiveContainer>
               ) : (
@@ -306,12 +316,12 @@ export default function Dashboard() {
               ) : modernData.monthlyLeaves && modernData.monthlyLeaves.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <RechartsBarChart data={modernData.monthlyLeaves} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted-foreground))" /> {/* Darker gridlines */}
+                    <XAxis dataKey="month" stroke="hsl(var(--primary))" tick={{ fill: "hsl(var(--primary))" }} />
+                    <YAxis stroke="hsl(var(--primary))" tick={{ fill: "hsl(var(--primary))" }} />
+                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "none", borderRadius: "0.5rem", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }} /> {/* Rounded glass effect */}
                     <Legend />
-                    <Bar dataKey="leave_count" name="Leaves" fill={COLORS[1]} />
+                    <Bar dataKey="leave_count" name="Leaves" fill={CHART_COLORS[0]} />
                   </RechartsBarChart>
                 </ResponsiveContainer>
               ) : (
@@ -339,15 +349,14 @@ export default function Dashboard() {
                       labelLine={false}
                       label={({ status, count }) => `${status}: ${count}`}
                       outerRadius={80}
-                      fill="#8884d8"
                       dataKey="count"
                       nameKey="status"
                     >
                       {modernData.reportStatus.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "none", borderRadius: "0.5rem", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }} /> {/* Rounded glass effect */}
                     <Legend />
                   </RechartsPieChart>
                 </ResponsiveContainer>

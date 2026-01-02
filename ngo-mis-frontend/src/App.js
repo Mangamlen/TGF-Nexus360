@@ -15,6 +15,8 @@ import EmployeeDirectory from "./pages/EmployeeDirectory"; // Import EmployeeDir
 import EmployeeProfile from "./pages/EmployeeProfile"; // Import EmployeeProfile
 import Payslip from "./pages/Payslip";
 import ForgotPassword from "./pages/ForgotPassword"; // Import ForgotPassword
+import ResetPassword from "./pages/ResetPassword"; // Import ResetPassword
+import AuthCallback from "./pages/AuthCallback"; // Import AuthCallback
 import PrivateRoute from "./components/PrivateRoute";
 import MainLayout from "./layouts/MainLayout";
 
@@ -26,6 +28,8 @@ function App() {
         {/* Public */}
         <Route path="/" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
 
         {/* Protected Layout */}
         <Route
