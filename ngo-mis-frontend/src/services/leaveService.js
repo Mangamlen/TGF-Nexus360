@@ -15,7 +15,7 @@ export const getAllLeaves = async () => {
   return res.data;
 };
 
-export const updateLeaveStatus = async (id, status) => {
-  const res = await api.put(`/leave/${id}`, { status });
+export const updateLeaveStatus = async (id, status, admin_remarks) => {
+  const res = await api.put(`/leave/${id}`, { status, admin_remarks });
   return res.data;
 };

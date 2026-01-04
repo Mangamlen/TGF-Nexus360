@@ -77,3 +77,25 @@ export const getDesignations = async () => {
     throw err;
   }
 };
+
+export const uploadEmployeePhoto = async (id, formData) => {
+  try {
+    const { data } = await API.put(`/hr/employees/${id}/photo`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data;
+  } catch (err) {
+    toast.error(err.response?.data?.error || "Failed to upload photo.");
+    throw err;
+  }
+};
+
+export const updateProfileDetails = async (profileData) => {
+  try {
+    const { data } = await API.put("/users/me/details", profileData);
+    return data;
+  } catch (err) {
+    toast.error(err.response?.data?.error || "Failed to update profile details.");
+    throw err;
+  }
+};

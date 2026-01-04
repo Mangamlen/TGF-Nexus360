@@ -74,3 +74,53 @@
     /* For Inter font, ensure it's loaded if not via Tailwind config directly */
   }
 }
+
+/* Dark mode overrides for react-calendar */
+.dark .react-calendar {
+  background-color: hsl(var(--card)); /* Use dark card background */
+  border-color: hsl(var(--border)); /* Use dark border color */
+  color: hsl(var(--foreground)); /* Use dark foreground color */
+}
+
+.dark .react-calendar__navigation button {
+  color: hsl(var(--foreground)); /* Navigation buttons text */
+}
+
+.dark .react-calendar__tile {
+  color: hsl(var(--foreground)); /* Default tile text */
+}
+
+.dark .react-calendar__tile:enabled:hover,
+.dark .react-calendar__tile:enabled:focus {
+  background-color: hsl(var(--muted)); /* Hover/focus background */
+}
+
+.dark .react-calendar__tile--now {
+  background-color: hsl(var(--primary) / 0.2); /* Today's date */
+}
+
+.dark .react-calendar__tile--active {
+  background-color: hsl(var(--primary)); /* Selected date */
+  color: hsl(var(--primary-foreground)); /* Selected date text */
+}
+
+.dark .react-calendar__month-view__weekdays__weekday abbr {
+  color: hsl(var(--muted-foreground)); /* Weekday short names */
+}
+
+.dark .react-calendar__navigation button:disabled {
+  background-color: transparent;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Ensure text in calendar days and headers is visible */
+.dark .react-calendar__month-view__days__day {
+  color: hsl(var(--foreground));
+}
+
+.dark .react-calendar__year-view .react-calendar__tile,
+.dark .react-calendar__decade-view .react-calendar__tile,
+.dark .react-calendar__century-view .react-calendar__tile {
+  color: hsl(var(--foreground));
+}
+

@@ -40,7 +40,7 @@ export default function Login() {
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
       <div className="hidden bg-primary lg:flex lg:flex-col items-center justify-center text-primary-foreground p-12">
         <div className="text-center">
-            <img src="/images/GF_logo.jpg" alt="GF Logo" className="h-24 w-24 mx-auto mb-4 rounded-lg shadow-lg" />
+            <img src="/images/GF_logo.jpg" alt="GF Logo" className="h-48 w-48 mx-auto mb-4 rounded-lg shadow-lg" />
             <h1 className="text-4xl font-bold mb-2">TGF Nexus360</h1>
             <p className="text-lg text-primary-foreground/90">
                 Streamlining operations for a brighter future.

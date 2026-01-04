@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "../components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { DatePicker } from "../components/ui/date-picker"; // Import the new DatePicker
@@ -70,10 +71,25 @@ export default function Attendance() {
     const minutes = date.getMinutes().toString().padStart(2, "0");
     return `${hours}:${minutes}`;
   };
+
+  const formatDateTimeForMySQL = (date) => {
+    if (!date) return null;
+    const pad = (num) => num.toString().padStart(2, '0');
+    
+    const year = date.getFullYear();
+    const month = pad(date.getMonth() + 1);
+    const day = pad(date.getDate());
+    const hours = pad(date.getHours());
+    const minutes = pad(date.getMinutes());
+    const seconds = pad(date.getSeconds());
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  };
   
   const combineDateAndTime = (dateObj, timeString) => {
     if (!dateObj || !timeString) return null;
     const [hours, minutes] = timeString.split(':');
+    if (isNaN(parseInt(hours, 10)) || isNaN(parseInt(minutes, 10))) return null;
     const newDate = new Date(dateObj);
     newDate.setHours(parseInt(hours, 10));
     newDate.setMinutes(parseInt(minutes, 10));
@@ -201,7 +217,80 @@ export default function Attendance() {
   };
 
   /* =========================
-     MODAL EDIT HANDLERS (ADMIN) - Remaining (correct) instance
+     MODAL EDIT HANDLERS (ADMIN)
+  ========================= */
+  const [editedRecordData, setEditedRecordData] = useState(null); // New state for modal form data
+  const [isSaving, setIsSaving] = useState(false); // New state for modal saving loading
+
+  const handleEditClick = (record) => {
+    // Format date and time for input fields
+    const formattedCheckIn = record.check_in ? format(new Date(record.check_in), "HH:mm") : "";
+    const formattedCheckOut = record.check_out ? format(new Date(record.check_out), "HH:mm") : "";
+    
+    setEditingRecord(record);
+    setEditedRecordData({
+      id: record.id,
+      employee_name: record.employee_name,
+      attendance_date: new Date(record.attendance_date), // Date object for DatePicker
+      check_in_time: formattedCheckIn,
+      check_out_time: formattedCheckOut,
+      status: record.status,
+      gps_location: record.gps_location || "",
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingRecord(null);
+    setEditedRecordData(null);
+  };
+
+  const handleModalChange = (e) => {
+    const { name, value } = e.target;
+    setEditedRecordData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleModalDateChange = (date) => {
+    setEditedRecordData(prev => ({ ...prev, attendance_date: date }));
+  };
+
+  const handleModalStatusChange = (value) => {
+    setEditedRecordData(prev => ({ ...prev, status: value }));
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editedRecordData || isSaving) return;
+
+    setIsSaving(true);
+    try {
+      const { id, attendance_date, check_in_time, check_out_time, status, gps_location } = editedRecordData;
+
+      const finalCheckIn = combineDateAndTime(attendance_date, check_in_time);
+      const finalCheckOut = combineDateAndTime(attendance_date, check_out_time);
+
+      const updatePayload = {
+        attendance_date: attendance_date.toISOString().split('T')[0],
+        check_in: formatDateTimeForMySQL(finalCheckIn),
+        check_out: formatDateTimeForMySQL(finalCheckOut),
+        status,
+        gps_location,
+      };
+
+      await API.put(`/attendance/admin/${id}`, updatePayload);
+      toast.success("Attendance record updated successfully!");
+      
+      loadAllAttendanceRecords();
+      handleCloseModal();
+    } catch (err) {
+      console.error("Failed to save attendance record:", err);
+      toast.error(err.response?.data?.error || "Failed to save changes.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  /* =========================
+     CALENDAR HELPERS
   ========================= */
 
   /* =========================
@@ -454,11 +543,14 @@ export default function Attendance() {
           </Card>
 
           {/* ================= EDIT ATTENDANCE MODAL ================= */}
-          {isModalOpen && editingRecord && (
+          {isModalOpen && editingRecord && editedRecordData && (
             <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                   <DialogTitle>Edit Attendance Record</DialogTitle>
+                  <DialogDescription>
+                    Make changes to the attendance record here. Click save when you're done.
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
@@ -468,7 +560,7 @@ export default function Attendance() {
                     <Input
                       id="employee_name"
                       name="employee_name"
-                      value={editingRecord.employee_name}
+                      value={editedRecordData.employee_name}
                       className="col-span-3"
                       disabled
                     />
@@ -479,7 +571,7 @@ export default function Attendance() {
                     </Label>
                     <div className="col-span-3">
                       <DatePicker
-                        date={editingRecord.date}
+                        date={editedRecordData.attendance_date}
                         setDate={handleModalDateChange}
                         placeholder="Select date"
                       />
@@ -493,7 +585,7 @@ export default function Attendance() {
                       id="check_in_time"
                       name="check_in_time"
                       type="time"
-                      value={editingRecord.check_in_time}
+                      value={editedRecordData.check_in_time}
                       onChange={handleModalChange}
                       className="col-span-3"
                     />
@@ -506,7 +598,7 @@ export default function Attendance() {
                       id="check_out_time"
                       name="check_out_time"
                       type="time"
-                      value={editingRecord.check_out_time}
+                      value={editedRecordData.check_out_time}
                       onChange={handleModalChange}
                       className="col-span-3"
                     />
@@ -516,7 +608,7 @@ export default function Attendance() {
                       Status
                     </Label>
                     <Select
-                      value={editingRecord.status}
+                      value={editedRecordData.status}
                       onValueChange={handleModalStatusChange}
                     >
                       <SelectTrigger className="col-span-3">
@@ -537,7 +629,7 @@ export default function Attendance() {
                     <Input
                       id="gps_location"
                       name="gps_location"
-                      value={editingRecord.gps_location || ""}
+                      value={editedRecordData.gps_location || ""}
                       onChange={handleModalChange}
                       className="col-span-3"
                     />
@@ -547,8 +639,8 @@ export default function Attendance() {
                   <Button variant="outline" onClick={handleCloseModal}>
                     Cancel
                   </Button>
-                  <Button onClick={handleSaveEdit} disabled={loading} variant="secondary">
-                    Save changes
+                  <Button onClick={handleSaveEdit} disabled={isSaving} variant="secondary">
+                    {isSaving ? "Saving..." : "Save changes"}
                   </Button>
                 </DialogFooter>
               </DialogContent>

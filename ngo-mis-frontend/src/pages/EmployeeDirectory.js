@@ -5,6 +5,7 @@ import { Card, CardContent } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
+import { Badge } from "../components/ui/badge";
 import { Search } from "lucide-react";
 import API from "../services/api";
 import { Skeleton } from "../components/ui/skeleton"; // Import Skeleton
@@ -28,6 +29,7 @@ function EmployeeCard({ employee }) {
           <h3 className="font-semibold text-lg">{employee.name}</h3>
           <p className="text-sm text-muted-foreground">{employee.designation}</p>
           <p className="text-xs text-muted-foreground">{employee.department}</p>
+          {employee.role && <Badge variant="outline" className="mt-2">{employee.role}</Badge>}
         </CardContent>
       </Link>
     </Card>
@@ -73,8 +75,11 @@ export default function EmployeeDirectory() {
 
   const filteredEmployees = useMemo(() => {
     return employees.filter(emp => {
-      const matchesSearch = emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            emp.designation.toLowerCase().includes(searchTerm.toLowerCase());
+      const searchTermLower = searchTerm.toLowerCase();
+      const matchesSearch = 
+        emp.name.toLowerCase().includes(searchTermLower) ||
+        emp.designation.toLowerCase().includes(searchTermLower) ||
+        (emp.role && emp.role.toLowerCase().includes(searchTermLower));
       const matchesDept = selectedDepartment === "all" || emp.department === selectedDepartment;
       return matchesSearch && matchesDept;
     });
@@ -86,7 +91,7 @@ export default function EmployeeDirectory() {
         <div className="relative w-full md:w-1/3">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input 
-            placeholder="Search by name or designation..."
+            placeholder="Search by name, designation, or role..."
             className="pl-8"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}

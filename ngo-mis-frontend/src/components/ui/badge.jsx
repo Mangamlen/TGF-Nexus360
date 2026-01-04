@@ -9,12 +9,20 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          "border-transparent bg-status-approved text-primary-foreground hover:bg-status-approved/80", // Default to Approved green
+          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
         secondary:
           "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
         destructive:
           "border-transparent bg-status-rejected text-destructive-foreground hover:bg-status-rejected/80", // Explicitly use status-rejected
         outline: "text-foreground",
+        success:
+          "border-transparent bg-status-approved text-primary-foreground hover:bg-status-approved/80",
+        primary:
+          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+        info:
+          "border-transparent bg-blue-500 text-primary-foreground hover:bg-blue-500/80",
+        warning:
+          "border-transparent bg-yellow-500 text-primary-foreground hover:bg-yellow-500/80",
         
         // New status variants based on theme
         approved: "border-transparent bg-status-approved text-primary-foreground hover:bg-status-approved/80",

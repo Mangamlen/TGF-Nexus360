@@ -40,6 +40,10 @@ const expenseRoutes = require("./routes/expenses");
 const dashboardRoutes = require("./routes/dashboard");
 const beneficiaryRoutes = require("./routes/beneficiaries");
 const reportRoutes = require("./routes/reports");
+const usersRouter = require("./routes/users");
+const notificationsRouter = require("./routes/notifications");
+const bellNotificationsRouter = require("./routes/bellNotifications");
+const beekeepingRouter = require("./routes/beekeeping"); // Add this line
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const apiLimiter = rateLimit({
@@ -59,6 +63,10 @@ app.use("/api/expenses", expenseRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/beneficiaries", beneficiaryRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/users", usersRouter);
+app.use("/api/notifications", notificationsRouter);
+app.use("/api/bell-notifications", bellNotificationsRouter);
+app.use("/api/beekeeping", beekeepingRouter); // Add this line
 app.use("/api/activity", require("./routes/activity"));
 app.use(helmet());
 

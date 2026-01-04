@@ -6,9 +6,11 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+
 import { Loader2 } from "lucide-react";
 import API from "../services/api"; // To get base URL for photo display
 import { Skeleton } from "../components/ui/skeleton"; // Import Skeleton
+
 
 
 export default function MyProfile() {
@@ -90,6 +92,8 @@ export default function MyProfile() {
       setIsSubmitting(false);
     }
   };
+
+
 
   if (isLoading) {
     return (
@@ -228,6 +232,10 @@ export default function MyProfile() {
           </form>
         </CardContent>
       </Card>
+
+
+
+
     </div>
   );
 }

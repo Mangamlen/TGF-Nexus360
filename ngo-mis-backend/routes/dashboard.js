@@ -17,7 +17,7 @@ router.get("/admin-summary", verifyToken, allowRoles([1, 2]), (req, res) => {
       (SELECT COUNT(*) FROM departments) AS total_departments,
       (SELECT COUNT(*) FROM expenses WHERE status='Pending') AS pending_expenses,
       (SELECT COUNT(*) FROM leave_requests WHERE status='Pending') AS pending_leaves,
-      (SELECT COUNT(*) FROM attendance_logs WHERE DATE(date) = CURDATE()) AS present_today,
+      (SELECT COUNT(*) FROM attendance_logs WHERE DATE(attendance_date) = CURDATE()) AS present_today,
       (SELECT COUNT(*) FROM payroll WHERE generated_on = CURDATE()) AS payroll_generated_today
   `;
 
@@ -39,7 +39,7 @@ router.get("/hr-summary", verifyToken, allowRoles([1,2,5]), (req, res) => {
       (SELECT COUNT(*) FROM departments) AS total_departments,
       (SELECT COUNT(*) FROM designations) AS total_designations,
       (SELECT COUNT(*) FROM leave_requests WHERE status='Pending') AS pending_leaves,
-      (SELECT COUNT(*) FROM attendance_logs WHERE DATE(date) = CURDATE()) AS present_today
+      (SELECT COUNT(*) FROM attendance_logs WHERE DATE(attendance_date) = CURDATE()) AS present_today
   `;
 
   db.query(sql, (err, results) => {
@@ -65,7 +65,7 @@ router.get("/my-summary", verifyToken, (req, res) => {
     const empId = empRows[0].id;
     const sql = `
       SELECT 
-        (SELECT COUNT(*) FROM attendance_logs WHERE employee_id = ? AND MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE())) AS present_days_this_month,
+        (SELECT COUNT(*) FROM attendance_logs WHERE employee_id = ? AND MONTH(attendance_date)=MONTH(CURDATE()) AND YEAR(attendance_date)=YEAR(CURDATE())) AS present_days_this_month,
         (SELECT COUNT(*) FROM leave_requests WHERE employee_id = ? AND status='Approved') AS total_approved_leaves,
         (SELECT COUNT(*) FROM expenses WHERE employee_id = ? AND status='Approved') AS approved_expenses,
         (SELECT IFNULL((SELECT salary FROM employees WHERE id = ?), 0)) AS salary
@@ -86,11 +86,11 @@ router.get("/my-summary", verifyToken, (req, res) => {
 router.get("/attendance-trend", verifyToken, allowRoles([1,2,5]), (req, res) => {
   const days = parseInt(req.query.days || "30", 10);
   const sql = `
-    SELECT DATE(date) as day, COUNT(*) as present_count
+    SELECT DATE(attendance_date) as day, COUNT(*) as present_count
     FROM attendance_logs
-    WHERE DATE(date) >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
-    GROUP BY DATE(date)
-    ORDER BY DATE(date) ASC
+    WHERE DATE(attendance_date) >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+    GROUP BY DATE(attendance_date)
+    ORDER BY DATE(attendance_date) ASC
   `;
   db.query(sql, [days], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -342,10 +342,10 @@ router.get("/modern", verifyToken, allowRoles([1, 2, 5]), async (req, res) => {
       topPerformingBeneficiariesResult, // New
     ] = await Promise.all([
       db.promise().query("SELECT COUNT(*) as approved_reports_count FROM report_status WHERE status = 'Approved'"),
-      db.promise().query("SELECT status, COUNT(*) as count FROM attendance_logs WHERE date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) GROUP BY status"),
+      db.promise().query("SELECT status, COUNT(*) as count FROM attendance_logs WHERE attendance_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) GROUP BY status"),
       db.promise().query("SELECT status, COUNT(*) as count FROM leave_requests GROUP BY status"),
       db.promise().query("SELECT COUNT(*) as fo_activity_count FROM activity_logs WHERE user_id IN (SELECT user_id FROM users WHERE role_id = 5)"),
-      db.promise().query("SELECT DATE(date) as date, COUNT(*) as present_count FROM attendance_logs WHERE status = 'Present' AND date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) GROUP BY DATE(date) ORDER BY DATE(date) ASC"),
+      db.promise().query("SELECT DATE(attendance_date) as date, COUNT(*) as present_count FROM attendance_logs WHERE status = 'Present' AND attendance_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) GROUP BY DATE(attendance_date) ORDER BY DATE(attendance_date) ASC"),
       db.promise().query("SELECT MONTHNAME(start_date) as month, COUNT(*) as leave_count FROM leave_requests WHERE YEAR(start_date) = YEAR(CURDATE()) GROUP BY MONTH(start_date), MONTHNAME(start_date) ORDER BY MONTH(start_date)"),
       db.promise().query("SELECT status, COUNT(*) as count FROM report_status GROUP BY status"),
       db.promise().query("SELECT COUNT(*) as total_beneficiaries FROM beneficiaries"), // New: Total Beneficiaries

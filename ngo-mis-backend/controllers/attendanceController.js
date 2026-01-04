@@ -34,7 +34,7 @@ exports.checkIn = async (req, res) => {
 
     db.query(
       `
-      INSERT INTO attendance_logs (employee_id, date, check_in, status)
+      INSERT INTO attendance_logs (employee_id, attendance_date, check_in, status)
       VALUES (?, CURDATE(), NOW(), 'Present')
       `,
       [employeeId],
@@ -67,7 +67,7 @@ exports.checkOut = async (req, res) => {
     db.query(
       `
       SELECT check_in FROM attendance_logs
-      WHERE employee_id = ? AND date = CURDATE()
+      WHERE employee_id = ? AND attendance_date = CURDATE()
       `,
       [employeeId],
       (err, rows) => {
@@ -85,11 +85,8 @@ exports.checkOut = async (req, res) => {
           UPDATE attendance_logs
           SET
             check_out = NOW(),
-            -- Calculate total_hours based on check_in and check_out
-            -- This assumes check_in and check_out are DATETIME or TIMESTAMP. If TIME, it's more complex.
-            -- Assuming they are DATETIME/TIMESTAMP from NOW() in check-in
             total_hours = ROUND(TIMESTAMPDIFF(MINUTE, check_in, NOW()) / 60, 2)
-          WHERE employee_id = ? AND date = CURDATE()
+          WHERE employee_id = ? AND attendance_date = CURDATE()
           `,
           [employeeId],
           (err2) => {
@@ -119,9 +116,9 @@ exports.getTodayStatus = async (req, res) => {
 
     db.query(
       `
-      SELECT date, check_in, check_out, total_hours, status
+      SELECT attendance_date, check_in, check_out, total_hours, status
       FROM attendance_logs
-      WHERE employee_id = ? AND date = CURDATE()
+      WHERE employee_id = ? AND attendance_date = CURDATE()
       `,
       [employeeId],
       (err, rows) => {
@@ -150,14 +147,14 @@ exports.getAttendanceHistory = async (req, res) => {
     db.query(
       `
       SELECT
-        date,
+        attendance_date,
         check_in,
         check_out,
         total_hours,
         status
       FROM attendance_logs
       WHERE employee_id = ?
-      ORDER BY date DESC
+      ORDER BY attendance_date DESC
       `,
       [employeeId],
       (err, rows) => {
@@ -189,7 +186,7 @@ exports.getAllAttendance = async (req, res) => {
       al.id,
       e.emp_code,
       u.name AS employee_name,
-      al.date AS attendance_date,
+      al.attendance_date,
       al.check_in,
       al.check_out,
       al.gps_location,
@@ -207,11 +204,11 @@ exports.getAllAttendance = async (req, res) => {
     queryParams.push(employeeId);
   }
   if (startDate) {
-    conditions.push(`al.date >= ?`);
+    conditions.push(`al.attendance_date >= ?`);
     queryParams.push(startDate);
   }
   if (endDate) {
-    conditions.push(`al.date <= ?`);
+    conditions.push(`al.attendance_date <= ?`);
     queryParams.push(endDate);
   }
 
@@ -219,7 +216,7 @@ exports.getAllAttendance = async (req, res) => {
     query += ` WHERE ` + conditions.join(" AND ");
   }
 
-  query += ` ORDER BY al.date DESC, u.name ASC`;
+  query += ` ORDER BY al.attendance_date DESC, u.name ASC`;
 
   db.query(query, queryParams, (err, rows) => {
     if (err) {
@@ -236,74 +233,60 @@ exports.getAllAttendance = async (req, res) => {
  */
 exports.updateAttendanceRecord = async (req, res) => {
   const { id } = req.params; // Attendance log ID
-  const { date, check_in, check_out, status, gps_location, employee_id } = req.body;
+  const { attendance_date, check_in, check_out, status, gps_location } = req.body; // attendance_date is YYYY-MM-DD string
 
-  // Basic validation (can be enhanced)
+  // Basic validation
   if (!id) {
     return res.status(400).json({ error: "Attendance log ID is required." });
   }
 
-  // Ensure employee_id is also provided for security/integrity checks if needed
-  // For now, assuming `id` is sufficient to identify the record uniquely
+  let total_hours_value = null;
 
-  // Calculate total_hours if check_in and check_out are provided
-  let total_hours_clause = "";
-  let check_in_val = check_in;
-  let check_out_val = check_out;
-  const queryParams = [];
+  // Calculate total_hours if both check_in and check_out are provided
+  if (check_in && check_out) {
+    const checkInDateTime = new Date(check_in);
+    const checkOutDateTime = new Date(check_out);
 
-  // Fetch current record to handle partial updates or calculate total_hours if only one time is updated
-  db.query(`SELECT check_in, check_out FROM attendance_logs WHERE id = ?`, [id], (err, existingRows) => {
-    if (err) {
-      console.error("Error fetching existing attendance record:", err);
-      return res.status(500).json({ error: "Failed to update attendance record." });
-    }
-    if (existingRows.length === 0) {
-      return res.status(404).json({ error: "Attendance record not found." });
-    }
-
-    const existingRecord = existingRows[0];
-    // Use existing check_in/check_out if not provided in body
-    check_in_val = check_in_val || existingRecord.check_in;
-    check_out_val = check_out_val || existingRecord.check_out;
-
-    if (check_in_val && check_out_val) {
-      // Assuming check_in_val and check_out_val are valid date-time strings
-      // Convert to Date objects for calculation
-      const inTime = new Date(check_in_val);
-      const outTime = new Date(check_out_val);
-      if (outTime > inTime) {
-        const diffMinutes = (outTime.getTime() - inTime.getTime()) / (1000 * 60);
-        total_hours_clause = `, total_hours = ?`;
-        queryParams.push(parseFloat((diffMinutes / 60).toFixed(2)));
-      } else {
-        total_hours_clause = `, total_hours = 0`; // Or handle as an error
-      }
+    if (checkOutDateTime > checkInDateTime) {
+      const diffMinutes = (checkOutDateTime.getTime() - checkInDateTime.getTime()) / (1000 * 60);
+      total_hours_value = parseFloat((diffMinutes / 60).toFixed(2));
     } else {
-      total_hours_clause = `, total_hours = NULL`; // Or handle appropriately if times are incomplete
+      total_hours_value = 0;
     }
+  }
 
-    let updateQuery = `
+  try {
+    const updateQuery = `
       UPDATE attendance_logs
       SET
-        date = ?,
+        attendance_date = ?,
         check_in = ?,
         check_out = ?,
         status = ?,
-        gps_location = ?
-        ${total_hours_clause}
+        gps_location = ?,
+        total_hours = ?
       WHERE id = ?
     `;
 
-    queryParams.unshift(date, check_in_val, check_out_val, status, gps_location);
-    queryParams.push(id); // Add ID at the end for the WHERE clause
+    const queryParams = [
+      attendance_date,
+      check_in, // Use the full DATETIME string from the frontend
+      check_out, // Use the full DATETIME string from the frontend
+      status,
+      gps_location,
+      total_hours_value,
+      id
+    ];
 
-    db.query(updateQuery, queryParams, (err2) => {
-      if (err2) {
-        console.error("Error updating attendance record:", err2);
-        return res.status(500).json({ error: "Failed to update attendance record." });
-      }
-      res.json({ message: "Attendance record updated successfully." });
-    });
-  });
+    const [result] = await db.promise().query(updateQuery, queryParams);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Attendance record not found or no changes made." });
+    }
+
+    res.json({ message: "Attendance record updated successfully." });
+  } catch (err) {
+    console.error("Error updating attendance record:", err);
+    res.status(500).json({ error: err.message || "Failed to update attendance record." });
+  }
 };

@@ -9,6 +9,7 @@ import Payroll from "./pages/Payroll";
 import StaffRegistration from "./pages/StaffRegistration";
 import MyProfile from "./pages/MyProfile";
 import Expenses from "./pages/Expenses"; // Added import
+import Beekeeping from "./pages/Beekeeping"; // Import Beekeeping
 import Beneficiaries from "./pages/Beneficiaries"; // Import Beneficiaries
 import BeneficiaryProfile from "./pages/BeneficiaryProfile"; // Import BeneficiaryProfile
 import EmployeeDirectory from "./pages/EmployeeDirectory"; // Import EmployeeDirectory
@@ -17,6 +18,7 @@ import Payslip from "./pages/Payslip";
 import ForgotPassword from "./pages/ForgotPassword"; // Import ForgotPassword
 import ResetPassword from "./pages/ResetPassword"; // Import ResetPassword
 import AuthCallback from "./pages/AuthCallback"; // Import AuthCallback
+import Settings from "./pages/Settings"; // Import Settings
 import PrivateRoute from "./components/PrivateRoute";
 import MainLayout from "./layouts/MainLayout";
 
@@ -81,6 +83,7 @@ function App() {
 
           {/* All logged-in users */}
           <Route path="/my-profile" element={<MyProfile />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/attendance" element={<Attendance />} />
           <Route path="/leave" element={<Leave />} />
@@ -90,6 +93,14 @@ function App() {
             element={
               <PrivateRoute allowedRoles={[1, 2, 5]}>
                 <Expenses />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/beekeeping"
+            element={
+              <PrivateRoute allowedRoles={[1, 2, 5]}>
+                <Beekeeping />
               </PrivateRoute>
             }
           />

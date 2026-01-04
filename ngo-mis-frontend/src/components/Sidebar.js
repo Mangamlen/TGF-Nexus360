@@ -13,6 +13,7 @@ import {
   Users,
   Contact, // For Employee Directory
   DollarSign,
+  Bug, // For Beekeeping
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion"; // Added Accordion imports
@@ -52,6 +53,7 @@ export default function Sidebar() {
       ]
     },
     (roleId === 1 || roleId === 2 || roleId === 5) && { to: "/expenses", icon: <DollarSign className="h-4 w-4" />, text: "Expenses" },
+    (roleId === 1 || roleId === 2 || roleId === 5) && { to: "/beekeeping", icon: <Bug className="h-4 w-4" />, text: "Beekeeping" },
     roleId === 1 && { to: "/activity", icon: <History className="h-4 w-4" />, text: "Activity Log" },
   ].filter(Boolean); // Filter out falsy values from conditional items
 

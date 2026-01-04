@@ -96,7 +96,7 @@ router.post(
   allowRoles([1, 2, 5]),
   uploadProfile.single("photo"),
   async (req, res) => {
-    const {
+    let {
       name,
       email,
       password,
@@ -112,7 +112,7 @@ router.post(
 
     const photo_path = req.file ? req.file.path : null;
 
-    if (!name || !email || !password || !role_id || !emp_code || !department_id || !designation_id || !joining_date || !salary) {
+    if (!name || !email || !password || !role_id || !department_id || !designation_id || !joining_date || !salary) {
       if (req.file) fs.unlinkSync(req.file.path); // Clean up uploaded file
       return res.status(400).json({ error: "Missing required fields for user/employee creation." });
     }
@@ -120,6 +120,21 @@ router.post(
     let conn;
     try {
       conn = await db.promise().getConnection();
+
+      // Auto-generate emp_code if not provided
+      if (!emp_code) {
+        const [lastEmployee] = await conn.query(
+          "SELECT emp_code FROM employees WHERE emp_code LIKE 'EMP-%' ORDER BY CAST(SUBSTRING(emp_code, 5) AS UNSIGNED) DESC LIMIT 1"
+        );
+
+        let nextId = 1;
+        if (lastEmployee.length > 0) {
+          const lastId = parseInt(lastEmployee[0].emp_code.split('-')[1], 10);
+          nextId = lastId + 1;
+        }
+        emp_code = `EMP-${nextId.toString().padStart(3, '0')}`;
+      }
+
       await conn.beginTransaction();
 
       // 1. Create User
@@ -269,11 +284,13 @@ router.get("/employees/all", verifyToken, async (req, res) => {
         u.name, 
         u.email,
         d.name as department,
-        desg.title as designation
+        desg.title as designation,
+        r.name as role
       FROM employees e
       JOIN users u ON e.user_id = u.id
       LEFT JOIN departments d ON e.department_id = d.id
       LEFT JOIN designations desg ON e.designation_id = desg.id
+      LEFT JOIN roles r ON u.role_id = r.id
       ORDER BY u.name
     `);
     res.json(rows);
@@ -297,11 +314,13 @@ router.get("/employees/:id", verifyToken, async (req, res) => {
         u.name, 
         u.email,
         d.name as department,
-        desg.title as designation
+        desg.title as designation,
+        r.name as role
       FROM employees e
       LEFT JOIN users u ON e.user_id = u.id
       LEFT JOIN departments d ON e.department_id = d.id
       LEFT JOIN designations desg ON e.designation_id = desg.id
+      LEFT JOIN roles r ON u.role_id = r.id
       WHERE e.id = ?
     `, [id]);
 
@@ -313,6 +332,53 @@ router.get("/employees/:id", verifyToken, async (req, res) => {
     res.status(500).json({ error: err.message || "Failed to fetch employee." });
   }
 });
+
+// Update employee's photo (Admin)
+router.put(
+  "/employees/:id/photo",
+  verifyToken,
+  allowRoles([1, 2]), // Only Admins and HR
+  uploadProfile.single("photo"),
+  async (req, res) => {
+    const { id } = req.params;
+    const photo_path = req.file ? req.file.path : null;
+
+    if (!photo_path) {
+      return res.status(400).json({ error: "No photo file provided." });
+    }
+
+    try {
+      // Fetch existing photo path for cleanup
+      let oldPhotoPath = null;
+      const [existingEmployee] = await db.promise().query(
+        "SELECT photo_path FROM employees WHERE id = ?",
+        [id]
+      );
+      if (existingEmployee.length > 0) {
+        oldPhotoPath = existingEmployee[0].photo_path;
+      } else {
+        if (req.file) fs.unlinkSync(req.file.path); // Clean up uploaded file
+        return res.status(404).json({ error: "Employee not found." });
+      }
+
+      // Update database
+      await db.promise().query(
+        "UPDATE employees SET photo_path = ? WHERE id = ?",
+        [photo_path, id]
+      );
+
+      // Delete old photo if it existed
+      if (oldPhotoPath && fs.existsSync(oldPhotoPath)) {
+        fs.unlinkSync(oldPhotoPath);
+      }
+
+      res.json({ message: "Photo updated successfully.", photo_path });
+    } catch (err) {
+      if (req.file) fs.unlinkSync(req.file.path); // Clean up new uploaded file on error
+      res.status(500).json({ error: err.message || "Failed to update photo." });
+    }
+  }
+);
 
 
 module.exports = router;

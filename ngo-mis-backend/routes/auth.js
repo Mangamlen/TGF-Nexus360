@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const db = require("../db");
 const authController = require("../controllers/authController");
 const passport = require("passport"); // Import passport
+const { verifyToken } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -131,6 +132,41 @@ router.get(
     res.redirect(`${process.env.CLIENT_URL}/auth/callback?token=${token}`);
   }
 );
+
+/* =========================
+   CHANGE PASSWORD
+========================= */
+router.post("/change-password", verifyToken, async (req, res) => {
+  const userId = req.user.id;
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: "Current and new passwords are required." });
+  }
+
+  try {
+    const [userRows] = await db.promise().query("SELECT password FROM users WHERE id = ?", [userId]);
+
+    if (userRows.length === 0) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    const user = userRows[0];
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({ error: "Incorrect current password." });
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    await db.promise().query("UPDATE users SET password = ? WHERE id = ?", [hashedNewPassword, userId]);
+
+    res.json({ message: "Password changed successfully." });
+  } catch (err) {
+    res.status(500).json({ error: err.message || "Failed to change password." });
+  }
+});
 
 module.exports = router;
 
