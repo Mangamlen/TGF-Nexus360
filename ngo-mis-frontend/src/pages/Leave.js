@@ -65,7 +65,7 @@ const StatCard = ({ title, value, icon, description }) => (
         <p className="text-xs text-muted-foreground">{description}</p>
       )}
     </CardContent>
-    <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-b-lg" /> {/* Emerald Green underline */}
+    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/50 to-transparent rounded-b-lg" /> {/* Subtle gradient underline */}
   </Card>
 );
 
@@ -182,7 +182,7 @@ export default function Leave() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Leave Management</h1>
+      <h1 className="text-2xl font-semibold">Leave Management</h1>
 
       {/* --- STATS CARDS --- */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

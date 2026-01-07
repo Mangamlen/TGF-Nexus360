@@ -23,9 +23,11 @@ import { Textarea } from "../components/ui/textarea";
 import { DatePicker } from "../components/ui/date-picker"; // Import DatePicker
 import { Skeleton } from "../components/ui/skeleton"; // Import Skeleton
 import expenseService from "../services/expenseService"; // Import the service
+import projectService from "../services/projectService"; // Import project service
 import { getRoleId } from "../utils/auth";
 import { toast } from "react-toastify"; // Import toast for consistent error handling
 import { format } from "date-fns"; // Import format for dates
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"; // Import Select components
 
 const TableSkeleton = ({ rows = 5, cols = 8 }) => (
   <Table>
@@ -53,6 +55,7 @@ export default function Expenses() {
   const isAdmin = roleId === 1;
   const isManager = roleId === 2;
   const [expenses, setExpenses] = useState([]);
+  const [projects, setProjects] = useState([]); // State to store projects
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -63,7 +66,18 @@ export default function Expenses() {
     expense_date: null, // Change to Date object for DatePicker
     description: "",
     receipt_url: "",
+    project_id: "", // Add project_id to form data
   });
+
+  const fetchProjects = useCallback(async () => {
+    try {
+      const res = await projectService.getAllProjects();
+      setProjects(res.data);
+    } catch (err) {
+      console.error("Failed to fetch projects:", err);
+      toast.error("Failed to load projects.");
+    }
+  }, []);
 
   const fetchExpenses = useCallback(async () => {
     setLoading(true);
@@ -81,7 +95,8 @@ export default function Expenses() {
 
   useEffect(() => {
     fetchExpenses();
-  }, [fetchExpenses]);
+    fetchProjects(); // Fetch projects on component mount
+  }, [fetchExpenses, fetchProjects]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -100,6 +115,7 @@ export default function Expenses() {
       expense_date: null,
       description: "",
       receipt_url: "",
+      project_id: "", // Initialize project_id for new expense
     });
     setIsModalOpen(true);
   };
@@ -109,9 +125,10 @@ export default function Expenses() {
     setFormData({
       category: expense.category,
       amount: expense.amount,
-      expense_date: expense.expense_date ? new Date(expense.expense_date) : null, // Date object for DatePicker
+      expense_date: expense.expense_date ? new Date(expense.expense_date) : null,
       description: expense.description,
       receipt_url: expense.receipt_url,
+      project_id: expense.project_id || "", // Set existing project_id for editing
     });
     setIsModalOpen(true);
   };
@@ -123,18 +140,18 @@ export default function Expenses() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const payload = {
+      ...formData,
+      expense_date: formData.expense_date ? format(formData.expense_date, "yyyy-MM-dd") : null,
+      project_id: formData.project_id ? parseInt(formData.project_id) : null, // Ensure project_id is a number or null
+    };
+
     try {
       if (currentExpense) {
-        await expenseService.updateExpense(currentExpense.id, {
-          ...formData,
-          expense_date: formData.expense_date ? format(formData.expense_date, "yyyy-MM-dd") : null,
-        });
+        await expenseService.updateExpense(currentExpense.id, payload);
         toast.success("Expense updated successfully!");
       } else {
-        await expenseService.submitExpense({
-          ...formData,
-          expense_date: formData.expense_date ? format(formData.expense_date, "yyyy-MM-dd") : null,
-        });
+        await expenseService.submitExpense(payload);
         toast.success("Expense submitted successfully!");
       }
       closeModal();
@@ -193,7 +210,7 @@ export default function Expenses() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Expense Management</h1>
+        <h1 className="text-2xl font-semibold">Expense Management</h1>
         <Button onClick={openAddModal} variant="secondary">Add New Expense</Button>
       </div>
       <Card>
@@ -223,6 +240,7 @@ export default function Expenses() {
                     <TableHead>Amount</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Description</TableHead>
+                    <TableHead>Project</TableHead> 
                     <TableHead>Status</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -236,6 +254,7 @@ export default function Expenses() {
                       <TableCell>₹{parseFloat(expense.amount).toLocaleString('en-IN')}</TableCell>
                       <TableCell>{format(new Date(expense.expense_date), "PPP")}</TableCell>
                       <TableCell className="max-w-xs truncate">{expense.description}</TableCell>
+                      <TableCell>{expense.project_name || "N/A"}</TableCell> 
                       <TableCell>
                         {getStatusBadge(expense.status)}
                       </TableCell>
@@ -330,6 +349,30 @@ export default function Expenses() {
                 onChange={handleInputChange}
                 className="col-span-3"
               />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="project_id" className="text-right">
+                Project
+              </Label>
+              <div className="col-span-3">
+                <Select
+                  name="project_id"
+                  value={formData.project_id ? String(formData.project_id) : "null-project"} // Handle null/undefined to "null-project"
+                  onValueChange={(value) => setFormData((prev) => ({ ...prev, project_id: value === "null-project" ? null : value }))} // Convert "null-project" back to null
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a project" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="null-project">No Project</SelectItem> {/* Changed value */}
+                    {projects.map((project) => (
+                      <SelectItem key={project.id} value={String(project.id)}>
+                        {project.project_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <DialogFooter>
               <Button type="submit" variant="secondary">{currentExpense ? "Save changes" : "Add Expense"}</Button>

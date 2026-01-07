@@ -10,6 +10,30 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Skeleton } from "../components/ui/skeleton";
+
+// Add TableSkeleton definition here
+const TableSkeleton = ({ rows = 5, cols = 5 }) => (
+  <Table>
+    <TableHeader>
+      <TableRow>
+        {Array.from({ length: cols }).map((_, i) => (
+          <TableHead key={i}><Skeleton className="h-4 w-full" /></TableHead>
+        ))}
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      {Array.from({ length: rows }).map((_, i) => (
+        <TableRow key={i}>
+          {Array.from({ length: cols }).map((_, j) => (
+            <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+          ))}
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
+);
 
 export default function Payroll() {
   const [history, setHistory] = useState([]);
@@ -86,7 +110,7 @@ export default function Payroll() {
   if (roleId === 5) {
     return (
       <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-        <h1 className="text-2xl font-bold">My Payroll History</h1>
+        <h1 className="text-2xl font-semibold">My Payroll History</h1>
         <Card>
           <CardHeader>
             <CardTitle>Individual Payroll Records</CardTitle>
@@ -105,7 +129,7 @@ export default function Payroll() {
               </TableHeader>
               <TableBody>
                 {isLoadingHistory ? (
-                  <TableRow><TableCell colSpan={5} className="h-24 text-center">Loading your payroll history...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} className="h-24 text-center"><TableSkeleton cols={5} /></TableCell></TableRow>
                 ) : history.length === 0 ? (
                   <TableRow><TableCell colSpan={5} className="h-24 text-center">No payroll records found for you.</TableCell></TableRow>
                 ) : (
@@ -131,7 +155,7 @@ export default function Payroll() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Payroll Management</h1>
+        <h1 className="text-2xl font-semibold">Payroll Management</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>Generate Salaries</Button>
@@ -144,12 +168,19 @@ export default function Payroll() {
             <form onSubmit={handleGenerate} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
+
+
                   <Label htmlFor="month">Month</Label>
-                  <select name="month" id="month" value={generateForm.month} onChange={handleFormChange} className="w-full h-10 border rounded-md px-2">
-                    {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(m => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
+                  <Select name="month" value={generateForm.month} onValueChange={(value) => setGenerateForm(prev => ({ ...prev, month: value }))}>
+                    <SelectTrigger className="w-full h-10">
+                      <SelectValue placeholder="Select Month" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(m => (
+                        <SelectItem key={m} value={m}>{m}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="year">Year</Label>
@@ -185,7 +216,7 @@ export default function Payroll() {
             </TableHeader>
             <TableBody>
               {isLoadingHistory ? (
-                <TableRow><TableCell colSpan={5} className="h-24 text-center">Loading history...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="h-24 text-center"><TableSkeleton cols={5} /></TableCell></TableRow>
               ) : history.length === 0 ? (
                 <TableRow><TableCell colSpan={5} className="h-24 text-center">No payroll history found.</TableCell></TableRow>
               ) : (
@@ -224,7 +255,7 @@ export default function Payroll() {
               </TableHeader>
               <TableBody>
                 {isLoadingDetails ? (
-                  <TableRow><TableCell colSpan={4} className="h-24 text-center">Loading details...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={4} className="h-24 text-center"><TableSkeleton cols={4} /></TableCell></TableRow>
                 ) : runDetails.length === 0 ? (
                   <TableRow><TableCell colSpan={4} className="h-24 text-center">No details found for this run.</TableCell></TableRow>
                 ) : (

@@ -21,6 +21,12 @@ import AuthCallback from "./pages/AuthCallback"; // Import AuthCallback
 import Settings from "./pages/Settings"; // Import Settings
 import PrivateRoute from "./components/PrivateRoute";
 import MainLayout from "./layouts/MainLayout";
+import ProjectActivities from "./pages/ProjectActivities";
+import MonthlyReport from "./pages/MonthlyReport";
+
+
+
+
 
 function App() {
   return (
@@ -62,7 +68,7 @@ function App() {
           <Route
             path="/staff-registration"
             element={
-              <PrivateRoute allowedRoles={[1, 2, 5]}>
+              <PrivateRoute allowedRoles={[1]}>
                 <StaffRegistration />
               </PrivateRoute>
             }
@@ -104,6 +110,23 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route
+            path="/project-activities"
+            element={
+              <PrivateRoute allowedRoles={[1, 2, 5]}>
+                <ProjectActivities />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/monthly-report"
+            element={
+              <PrivateRoute allowedRoles={[1, 2, 5]}>
+                <MonthlyReport />
+              </PrivateRoute>
+            }
+          />
+
 
           {/* Super Admin only */}
           <Route

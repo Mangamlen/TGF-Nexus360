@@ -84,6 +84,12 @@ export const getModernDashboardData = () => {
     .catch(err => handleApiError(err, "Failed to load modern dashboard data."));
 };
 
+export const getProjectSummary = () => {
+  return API.get("/dashboard/project-summary")
+    .then(res => res.data)
+    .catch(err => handleApiError(err, "Failed to load project summary data."));
+};
+
 // --- Filter Data ---
 export const getDashboardFilters = () => {
   return API.get("/dashboard/filters")

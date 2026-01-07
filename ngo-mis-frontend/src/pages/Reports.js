@@ -12,6 +12,29 @@ import { Label } from "../components/ui/label";
 import { Badge } from "../components/ui/badge";
 import { Download, Check, Lock, History, Loader2, Users } from "lucide-react"; // Import Icons
 import * as dashboardService from "../services/dashboardService"; // Import dashboard service
+import { Skeleton } from "../components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"; // Import Skeleton
+
+const TableSkeleton = ({ rows = 5, cols = 5 }) => (
+  <Table>
+    <TableHeader>
+      <TableRow>
+        {Array.from({ length: cols }).map((_, i) => (
+          <TableHead key={i}><Skeleton className="h-4 w-full" /></TableHead>
+        ))}
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      {Array.from({ length: rows }).map((_, i) => (
+        <TableRow key={i}>
+          {Array.from({ length: cols }).map((_, j) => (
+            <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+          ))}
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
+);
 
 export default function Reports() {
   const roleId = getRoleId();
@@ -136,7 +159,7 @@ export default function Reports() {
       case 'Submitted':
         return <Badge variant="secondary">Submitted</Badge>;
       case 'Locked':
-        return <Badge className="bg-gray-700 text-white">Locked</Badge>;
+        return <Badge variant="muted">Locked</Badge>;
       default:
         return <Badge variant="outline">Draft</Badge>;
     }
@@ -145,7 +168,7 @@ export default function Reports() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Reports Dashboard</h1>
+        <h1 className="text-2xl font-semibold">Reports Dashboard</h1>
         {(isAdmin || isManager || roleId === 5) && (
           <Dialog open={dialogs.submit} onOpenChange={(isOpen) => setDialogs(p => ({...p, submit: isOpen}))}>
             <DialogTrigger asChild>
@@ -159,12 +182,17 @@ export default function Reports() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="month">Month</Label>
-                    <select name="month" id="month" value={form.month} onChange={handleFormChange} className="w-full h-10 border rounded-md px-2">
+                  <Label htmlFor="month">Month</Label>
+                  <Select name="month" value={form.month} onValueChange={(value) => handleFormChange({ target: { name: 'month', value: value }})}>
+                    <SelectTrigger className="w-full h-10">
+                      <SelectValue placeholder="Select Month" />
+                    </SelectTrigger>
+                    <SelectContent>
                       {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(m => (
-                        <option key={m} value={m}>{m}</option>
+                        <SelectItem key={m} value={m}>{m}</SelectItem>
                       ))}
-                    </select>
+                    </SelectContent>
+                  </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="year">Year</Label>
@@ -204,7 +232,7 @@ export default function Reports() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={4} className="h-24 text-center">Loading reports...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={4} className="h-24 text-center"><TableSkeleton cols={4} /></TableCell></TableRow>
               ) : reports.length === 0 ? (
                 <TableRow><TableCell colSpan={4} className="h-24 text-center">No reports found.</TableCell></TableRow>
               ) : (
@@ -247,9 +275,9 @@ export default function Reports() {
           </CardHeader>
           <CardContent>
             {isStatsLoading ? (
-              <div className="flex justify-center items-center h-24">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="ml-2 text-lg">Loading beneficiary statistics...</span>
+              <div className="space-y-4">
+                <TableSkeleton cols={4} rows={1} /> {/* For summary cards */}
+                <TableSkeleton cols={2} rows={3} /> {/* For village distribution */}
               </div>
             ) : beneficiaryStats ? (
               <div className="grid gap-6">

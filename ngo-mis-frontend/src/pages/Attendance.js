@@ -374,12 +374,12 @@ export default function Attendance() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold mb-4">Attendance</h2>
+      <h2 className="text-2xl font-semibold mb-4">Attendance</h2>
 
       {/* --- Calendar View --- */}
       <Card>
         <CardHeader>
-          <CardTitle>Attendance & Leave Calendar</CardTitle>
+          <CardTitle className="text-2xl font-medium">Attendance & Leave Calendar</CardTitle>
           <CardDescription>Visual overview of employee attendance and leave requests.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -402,7 +402,7 @@ export default function Attendance() {
           {/* ================= TODAY STATUS (USER) ================= */}
           <Card>
             <CardHeader>
-              <CardTitle>Your Today's Status</CardTitle>
+              <CardTitle className="text-2xl font-medium">Your Today's Status</CardTitle>
               <CardDescription>Manage your daily check-in and check-out.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -433,7 +433,7 @@ export default function Attendance() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Attendance History</CardTitle>
+              <CardTitle className="text-2xl font-medium">Attendance History</CardTitle>
               <CardDescription>A list of your recent attendance records.</CardDescription>
             </CardHeader>
             <CardContent>

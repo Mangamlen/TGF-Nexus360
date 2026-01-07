@@ -370,5 +370,24 @@ router.get("/modern", verifyToken, allowRoles([1, 2, 5]), async (req, res) => {
   }
 });
 
+router.get("/project-summary", verifyToken, allowRoles([1, 2, 5]), async (req, res) => {
+    try {
+        const [trainings] = await db.promise().query("SELECT COUNT(*) as total_trainings FROM project_activities");
+        const [participants] = await db.promise().query("SELECT SUM(participants_count) as total_participants FROM project_activities");
+        const [shgs] = await db.promise().query("SELECT SUM(shg_count) as total_shgs FROM project_activities");
+        const [expenses] = await db.promise().query("SELECT SUM(amount) as total_expenses FROM project_expenses");
+        const [pending_expenses] = await db.promise().query("SELECT SUM(amount) as pending_expenses FROM project_expenses WHERE expense_status = 'Pending'");
+
+        res.json({
+            total_trainings: trainings[0].total_trainings || 0,
+            total_participants: participants[0].total_participants || 0,
+            total_shgs: shgs[0].total_shgs || 0,
+            total_expenses: expenses[0].total_expenses || 0,
+            pending_expenses: pending_expenses[0].pending_expenses || 0,
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 module.exports = router;

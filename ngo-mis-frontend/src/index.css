@@ -4,63 +4,97 @@
 
 @layer base {
   :root {
-    --background: 180 11% 97%; /* #F7F9F8 - Soft White (Main background) */
-    --foreground: 207 51% 10%; /* #0B1F2A - Deep Navy (Main text on light background) */
-    --card: 180 11% 97%; /* #F7F9F8 - Soft White (Card surfaces) */
-    --card-foreground: 207 51% 10%; /* Deep Navy for text on cards */
-    --popover: 180 11% 97%;
-    --popover-foreground: 207 51% 10%;
-    --primary: 148 64% 50%; /* #2ECC71 - Emerald Green (Primary actions) */
-    --primary-foreground: 0 0% 100%; /* White */
-    --secondary: 173 33% 50%; /* #4DB6AC - Muted Teal (Secondary actions) */
-    --secondary-foreground: 0 0% 100%; /* White */
-    --muted: 180 11% 90%; /* A slightly darker soft white for muted elements */
-    --muted-foreground: 195 8% 52%; /* #7F8C8D - Locked gray for muted text */
-    --accent: 173 33% 50%; /* Muted Teal */
-    --accent-foreground: 207 51% 10%; /* Deep Navy */
-    --destructive: 5 76% 57%; /* #E74C3C - Rejected Red */
+    /* --- Calm Color Palette Redefinition --- */
+    /* Backgrounds & Surfaces */
+    --background: 220 20% 97%;   /* Soft off-white/very light grey-blue for main background */
+    --card: 0 0% 100%;           /* Pure white for card surfaces for contrast, or very subtle light grey */
+    --popover: 0 0% 100%;        /* Pure white */
+    --input: 220 20% 95%;        /* Lighter shade of background for input fields */
+    
+    /* Text & Foreground */
+    --foreground: 220 10% 15%;   /* Deep charcoal/soft black for primary text */
+    --card-foreground: 220 10% 15%; /* Deep charcoal for text on cards */
+    --popover-foreground: 220 10% 15%;
+    
+    /* Primary (Muted Blue/Green - A Dusty Teal/Sage) */
+    --primary: 160 30% 45%;      /* Muted sage green/teal for primary actions */
+    --primary-foreground: 0 0% 100%; /* White for text on primary buttons */
+    
+    /* Secondary (Complementary Muted Tone - A Soft Grey-Blue) */
+    --secondary: 210 15% 65%;    /* Soft muted grey-blue for secondary actions */
+    --secondary-foreground: 220 10% 15%; /* Deep charcoal for text on secondary buttons */
+    
+    /* Muted Elements & Borders */
+    --muted: 220 15% 90%;        /* Light grey for muted backgrounds/elements */
+    --muted-foreground: 220 8% 45%; /* Mid-grey for muted text */
+    --border: 220 10% 85%;       /* Light grey for borders */
+    
+    /* Accent (Subtle highlight, can be same as secondary or a slightly different muted tone) */
+    --accent: 210 15% 65%;       /* Soft muted grey-blue (matching secondary for minimalism) */
+    --accent-foreground: 220 10% 15%; /* Deep charcoal */
+    
+    /* Destructive (Desaturated Red) */
+    --destructive: 0 70% 55%;    /* Desaturated red for destructive actions */
     --destructive-foreground: 0 0% 100%; /* White */
-    --border: 207 51% 20%; /* Darker Navy for borders on light background */
-    --input: 180 11% 90%; /* Slightly darker soft white for input backgrounds */
-    --ring: 148 64% 50%; /* Emerald Green for focus ring */
-    --radius: 1rem; /* 16px for rounded corners */
+    
+    /* Ring (Focus state) */
+    --ring: 160 30% 45%;         /* Matching primary color for focus ring */
 
-    /* Custom Status Colors */
-    --status-approved: 148 64% 50%; /* #2ECC71 - Emerald Green */
-    --status-rejected: 5 76% 57%; /* #E74C3C - Rejected Red */
-    --status-pending: 43 89% 57%; /* #F4C430 - Pending Yellow */
-    --status-locked: 195 8% 52%; /* #7F8C8D - Locked Gray */
-    --soft-teal: 173 33% 50%; /* #4DB6AC - Soft Teal (same as secondary) */
+    --radius: 1.5rem; /* Large rounded corners (24px) */
+
+    /* Custom Status Colors - adjust to new palette */
+    --status-approved: 160 30% 45%;  /* Matching primary */
+    --status-rejected: 0 70% 55%;    /* Matching destructive */
+    --status-pending: 40 80% 60%;    /* Softer orange/yellow */
+    --status-locked: 220 8% 45%;     /* Matching muted-foreground */
+    --soft-teal: 160 25% 50%;        /* A slightly adjusted soft teal */
   }
 
   .dark {
-    --background: 207 51% 10%; /* #0B1F2A - Deep Navy (Dark theme background) */
-    --foreground: 180 11% 97%; /* #F7F9F8 - Soft White */
-    --card: 207 51% 15%; /* Slightly lighter navy for dark mode cards */
-    --card-foreground: 180 11% 97%; /* Soft White */
-    --popover: 207 51% 15%;
-    --popover-foreground: 180 11% 97%;
-    --primary: 148 64% 50%; /* #2ECC71 - Emerald Green */
-    --primary-foreground: 0 0% 100%; /* White */
-    --secondary: 173 33% 50%; /* #4DB6AC - Muted Teal */
-    --secondary-foreground: 0 0% 100%; /* White */
-    --muted: 207 51% 18%; /* Darker muted for dark mode */
-    --muted-foreground: 195 8% 52%; /* #7F8C8D - Locked gray for muted text */
-    --accent: 173 33% 50%; /* Muted Teal */
-    --accent-foreground: 0 0% 100%; /* White */
-    --destructive: 5 76% 57%; /* #E74C3C - Rejected Red */
-    --destructive-foreground: 0 0% 100%; /* White */
-    --border: 207 51% 25%; /* Slightly lighter darker navy for borders */
-    --input: 207 51% 18%; /* Muted navy for input backgrounds */
-    --ring: 148 64% 50%; /* Emerald Green */
-    --radius: 1rem;
+    /* --- Dark Mode Calm Color Palette Redefinition --- */
+    /* Backgrounds & Surfaces */
+    --background: 220 15% 10%;   /* Dark grey-blue for main dark background */
+    --card: 220 15% 15%;         /* Slightly lighter dark grey-blue for card surfaces */
+    --popover: 220 15% 15%;      /* Slightly lighter dark grey-blue */
+    --input: 220 15% 20%;        /* Darker shade for input backgrounds */
     
-    /* Custom Status Colors - should be consistent or slightly adjusted for dark mode if contrast is an issue */
-    --status-approved: 148 64% 50%;
-    --status-rejected: 5 76% 57%;
-    --status-pending: 43 89% 57%;
-    --status-locked: 195 8% 52%;
-    --soft-teal: 173 33% 50%;
+    /* Text & Foreground */
+    --foreground: 220 20% 90%;   /* Light grey-blue for primary text */
+    --card-foreground: 220 20% 90%; /* Light grey-blue for text on cards */
+    --popover-foreground: 220 20% 90%;
+    
+    /* Primary (Muted Blue/Green - A Dusty Teal/Sage) */
+    --primary: 160 30% 45%;      /* Same muted sage green/teal */
+    --primary-foreground: 0 0% 100%; /* White */
+    
+    /* Secondary (Complementary Muted Tone - A Soft Grey-Blue) */
+    --secondary: 210 15% 65%;    /* Same soft muted grey-blue */
+    --secondary-foreground: 220 20% 90%; /* Light grey-blue */
+    
+    /* Muted Elements & Borders */
+    --muted: 220 15% 25%;        /* Darker grey for muted backgrounds/elements */
+    --muted-foreground: 220 8% 70%; /* Lighter mid-grey for muted text */
+    --border: 220 15% 30%;       /* Darker grey for borders */
+    
+    /* Accent (Subtle highlight) */
+    --accent: 210 15% 65%;       /* Same soft muted grey-blue */
+    --accent-foreground: 220 20% 90%; /* Light grey-blue */
+    
+    /* Destructive (Desaturated Red) */
+    --destructive: 0 70% 55%;    /* Same desaturated red */
+    --destructive-foreground: 0 0% 100%; /* White */
+    
+    /* Ring (Focus state) */
+    --ring: 160 30% 45%;         /* Matching primary color */
+    
+    --radius: 0.75rem; /* Same radius */
+
+    /* Custom Status Colors - adjust to new palette */
+    --status-approved: 160 30% 45%;
+    --status-rejected: 0 70% 55%;
+    --status-pending: 40 80% 60%;
+    --status-locked: 220 8% 70%;
+    --soft-teal: 160 25% 50%;
   }
 }
 
@@ -75,52 +109,291 @@
   }
 }
 
-/* Dark mode overrides for react-calendar */
+/* --- React Calendar Theming for new UI/UX --- */
+.react-calendar {
+  width: 100%;
+  max-width: 100%;
+  background-color: hsl(var(--card)); /* Use card background */
+  border: 1px solid hsl(var(--border)); /* Subtle border */
+  border-radius: var(--radius); /* Large rounded corners */
+  font-family: "Inter", sans-serif; /* Ensure Inter font */
+  line-height: 1.125em;
+  box-shadow: var(--shadow-soft); /* Apply soft shadow */
+}
+
+.react-calendar--doubleView {
+  width: 700px;
+}
+
+.react-calendar--doubleView .react-calendar__viewContainer {
+  display: flex;
+  margin: -0.5em;
+}
+
+.react-calendar--doubleView .react-calendar__viewContainer > * {
+  width: 50%;
+  margin: 0.5em;
+}
+
+.react-calendar,
+.react-calendar *,
+.react-calendar *:before,
+.react-calendar *:after {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+.react-calendar button {
+  margin: 0;
+  border: 0;
+  outline: none;
+}
+
+.react-calendar button:enabled:hover {
+  cursor: pointer;
+}
+
+/* Navigation */
+.react-calendar__navigation {
+  display: flex;
+  height: 44px;
+  margin-bottom: 1em;
+  background-color: hsl(var(--muted)); /* Muted background for navigation */
+  border-bottom: 1px solid hsl(var(--border)); /* Subtle separator */
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
+}
+
+.react-calendar__navigation button {
+  min-width: 44px;
+  background: none;
+  color: hsl(var(--foreground)); /* Foreground color for navigation buttons */
+  font-weight: 500; /* Medium weight for navigation text */
+  border-radius: var(--radius); /* Rounded buttons */
+  transition: all 0.2s ease-in-out;
+}
+
+.react-calendar__navigation button:enabled:hover,
+.react-calendar__navigation button:enabled:focus {
+  background-color: hsl(var(--muted-foreground) / 0.1); /* Subtle hover/focus */
+  border-radius: var(--radius);
+}
+
+.react-calendar__navigation button[disabled] {
+  background-color: transparent;
+  color: hsl(var(--muted-foreground) / 0.5); /* Faded disabled text */
+}
+
+.react-calendar__navigation__label {
+  flex-grow: 1;
+  background-color: transparent;
+  font-weight: 600; /* Semi-bold for month/year label */
+  color: hsl(var(--foreground));
+  border-radius: var(--radius);
+  transition: all 0.2s ease-in-out;
+}
+
+.react-calendar__navigation__label:enabled:hover,
+.react-calendar__navigation__label:enabled:focus {
+  background-color: hsl(var(--muted-foreground) / 0.1); /* Subtle hover/focus */
+  border-radius: var(--radius);
+}
+
+/* Views */
+.react-calendar__month-view__weekdays {
+  text-align: center;
+  text-transform: uppercase;
+  font-weight: 500; /* Medium weight for weekdays */
+  font-size: 0.75em;
+  color: hsl(var(--muted-foreground)); /* Muted foreground for weekdays */
+}
+
+.react-calendar__month-view__weekdays__weekday {
+  padding: 0.5em;
+  color: hsl(var(--muted-foreground));
+}
+
+.react-calendar__month-view__days__day--weekend {
+  color: hsl(var(--destructive) / 0.8); /* Slightly muted destructive for weekends */
+}
+
+.react-calendar__month-view__days__day--neighboringMonth {
+  color: hsl(var(--muted-foreground) / 0.6); /* Faded neighboring month days */
+}
+
+.react-calendar__tile {
+  max-width: 100%;
+  padding: 0.5em 0.625em;
+  background: none;
+  text-align: center;
+  line-height: 1.5em;
+  border-radius: var(--radius); /* Rounded tiles */
+  transition: all 0.2s ease-in-out;
+  color: hsl(var(--foreground)); /* Default day text color */
+}
+
+.react-calendar__tile:disabled {
+  background-color: transparent;
+  color: hsl(var(--muted-foreground) / 0.5);
+}
+
+.react-calendar__tile:enabled:hover,
+.react-calendar__tile:enabled:focus {
+  background-color: hsl(var(--muted) / 0.5); /* Softer hover/focus for tiles */
+  border-radius: var(--radius);
+}
+
+.react-calendar__tile--now {
+  background-color: hsl(var(--primary) / 0.2); /* Subtle primary tint for today */
+  border-radius: var(--radius);
+  font-weight: 600; /* Semi-bold for today */
+}
+
+.react-calendar__tile--now:enabled:hover,
+.react-calendar__tile--now:enabled:focus {
+  background-color: hsl(var(--primary) / 0.3);
+}
+
+.react-calendar__tile--hasActive {
+  background-color: hsl(var(--secondary) / 0.3); /* Secondary tint for range start/end */
+  color: hsl(var(--foreground));
+  border-radius: var(--radius);
+}
+
+.react-calendar__tile--active {
+  background-color: hsl(var(--primary)); /* Primary color for selected day */
+  color: hsl(var(--primary-foreground)); /* White text on selected day */
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+
+.react-calendar__tile--active:enabled:hover,
+.react-calendar__tile--active:enabled:focus {
+  background-color: hsl(var(--primary) / 0.8);
+}
+
+.react-calendar__tile--range {
+  background-color: hsl(var(--primary) / 0.1);
+  color: hsl(var(--foreground));
+  border-radius: 0; /* No rounding for range middle */
+}
+
+.react-calendar__tile--rangeStart {
+  border-top-left-radius: var(--radius);
+  border-bottom-left-radius: var(--radius);
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.react-calendar__tile--rangeEnd {
+  border-top-right-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.react-calendar__year-view .react-calendar__tile,
+.react-calendar__decade-view .react-calendar__tile,
+.react-calendar__century-view .react-calendar__tile {
+  padding: 2em 0.5em;
+  border-radius: var(--radius);
+}
+
+/* Custom tile content styling from Attendance.js */
+.react-calendar-themed .flex {
+  font-size: 0.6em !important; /* Adjust font size for calendar events */
+  line-height: 1.2 !important;
+}
+
+/* Dark mode specific calendar styles (overrides for the new theme) */
 .dark .react-calendar {
-  background-color: hsl(var(--card)); /* Use dark card background */
-  border-color: hsl(var(--border)); /* Use dark border color */
-  color: hsl(var(--foreground)); /* Use dark foreground color */
+  background-color: hsl(var(--card));
+  border-color: hsl(var(--border));
+  color: hsl(var(--foreground));
+}
+
+.dark .react-calendar__navigation {
+  background-color: hsl(var(--muted) / 0.5); /* Slightly transparent muted */
+  border-bottom: 1px solid hsl(var(--border) / 0.5);
 }
 
 .dark .react-calendar__navigation button {
-  color: hsl(var(--foreground)); /* Navigation buttons text */
+  color: hsl(var(--foreground));
+}
+
+.dark .react-calendar__navigation button:enabled:hover,
+.dark .react-calendar__navigation button:enabled:focus {
+  background-color: hsl(var(--foreground) / 0.05); /* Very subtle hover */
+}
+
+.dark .react-calendar__navigation__label {
+  color: hsl(var(--foreground));
+}
+
+.dark .react-calendar__navigation__label:enabled:hover,
+.dark .react-calendar__navigation__label:enabled:focus {
+  background-color: hsl(var(--foreground) / 0.05);
+}
+
+.dark .react-calendar__month-view__weekdays {
+  color: hsl(var(--muted-foreground));
+}
+
+.dark .react-calendar__month-view__days__day--weekend {
+  color: hsl(var(--destructive) / 0.8);
+}
+
+.dark .react-calendar__month-view__days__day--neighboringMonth {
+  color: hsl(var(--muted-foreground) / 0.5);
 }
 
 .dark .react-calendar__tile {
-  color: hsl(var(--foreground)); /* Default tile text */
+  color: hsl(var(--foreground));
 }
 
 .dark .react-calendar__tile:enabled:hover,
 .dark .react-calendar__tile:enabled:focus {
-  background-color: hsl(var(--muted)); /* Hover/focus background */
+  background-color: hsl(var(--card) / 0.5); /* Card surface with transparency */
 }
 
 .dark .react-calendar__tile--now {
-  background-color: hsl(var(--primary) / 0.2); /* Today's date */
+  background-color: hsl(var(--primary) / 0.2);
+  color: hsl(var(--foreground));
+}
+
+.dark .react-calendar__tile--now:enabled:hover,
+.dark .react-calendar__tile--now:enabled:focus {
+  background-color: hsl(var(--primary) / 0.3);
+}
+
+.dark .react-calendar__tile--hasActive {
+  background-color: hsl(var(--secondary) / 0.3);
+  color: hsl(var(--foreground));
 }
 
 .dark .react-calendar__tile--active {
-  background-color: hsl(var(--primary)); /* Selected date */
-  color: hsl(var(--primary-foreground)); /* Selected date text */
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
 }
 
-.dark .react-calendar__month-view__weekdays__weekday abbr {
-  color: hsl(var(--muted-foreground)); /* Weekday short names */
+.dark .react-calendar__tile--active:enabled:hover,
+.dark .react-calendar__tile--active:enabled:focus {
+  background-color: hsl(var(--primary) / 0.8);
 }
 
-.dark .react-calendar__navigation button:disabled {
-  background-color: transparent;
-  color: hsl(var(--muted-foreground));
-}
-
-/* Ensure text in calendar days and headers is visible */
-.dark .react-calendar__month-view__days__day {
+.dark .react-calendar__tile--range {
+  background-color: hsl(var(--primary) / 0.1);
   color: hsl(var(--foreground));
 }
 
-.dark .react-calendar__year-view .react-calendar__tile,
-.dark .react-calendar__decade-view .react-calendar__tile,
-.dark .react-calendar__century-view .react-calendar__tile {
-  color: hsl(var(--foreground));
+.dark .react-calendar__tile--rangeStart,
+.dark .react-calendar__tile--rangeEnd {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
 }
 

@@ -87,6 +87,7 @@ export default function EmployeeDirectory() {
 
   return (
     <div className="space-y-6">
+      <h1 className="text-2xl font-semibold mb-4">Employee Directory</h1>
       <div className="flex flex-col md:flex-row gap-4 justify-between">
         <div className="relative w-full md:w-1/3">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

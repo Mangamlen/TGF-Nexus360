@@ -57,7 +57,7 @@ function ProfileCompleteness({ employee }) {
       </CardHeader>
       <CardContent>
         <div className="flex items-center gap-4">
-          <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+          <div className="w-full bg-muted rounded-full h-2.5 dark:bg-muted-foreground">
             <div 
               className="bg-primary h-2.5 rounded-full transition-all duration-500" 
               style={{ width: `${percentage}%` }}
@@ -206,7 +206,7 @@ export default function EmployeeProfile() {
             </Button>
           </div>
           <div className="text-center md:text-left">
-            <h1 className="text-3xl font-bold">{employee.name || 'User Name Not Available'}</h1>
+            <h1 className="text-3xl font-semibold">{employee.name || 'User Name Not Available'}</h1>
             <p className="text-xl text-muted-foreground">{employee.designation}</p>
             <p className="text-sm text-muted-foreground">{employee.department}</p>
             {employee.role && <Badge className="mt-2">{employee.role}</Badge>}

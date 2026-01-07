@@ -11,6 +11,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Loader2, PlusCircle, Trash2, Edit } from "lucide-react";
 import { Skeleton } from "../components/ui/skeleton"; // Import Skeleton
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 
 const TableSkeleton = ({ rows = 5, cols = 5 }) => (
   <Table>
@@ -112,6 +113,7 @@ export default function Beneficiaries() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+      <h1 className="text-2xl font-semibold mb-4">Beneficiary Management</h1>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -136,11 +138,16 @@ export default function Beneficiaries() {
                 </div>
                 <div>
                   <Label htmlFor="gender">Gender</Label>
-                   <select id="gender" name="gender" value={formData.gender} onChange={handleInputChange} className="w-full h-10 border rounded-md px-2" required>
-                    <option>Male</option>
-                    <option>Female</option>
-                    <option>Other</option>
-                  </select>
+                  <Select id="gender" name="gender" value={formData.gender} onValueChange={(value) => handleInputChange({ target: { name: 'gender', value: value }})} required>
+                    <SelectTrigger className="w-full h-10">
+                      <SelectValue placeholder="Select Gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="village">Village</Label>
@@ -152,11 +159,16 @@ export default function Beneficiaries() {
                 </div>
                 <div>
                   <Label htmlFor="training_status">Training Status</Label>
-                  <select id="training_status" name="training_status" value={formData.training_status} onChange={handleInputChange} className="w-full h-10 border rounded-md px-2" required>
-                    <option>Not Started</option>
-                    <option>In Progress</option>
-                    <option>Completed</option>
-                  </select>
+                  <Select id="training_status" name="training_status" value={formData.training_status} onValueChange={(value) => handleInputChange({ target: { name: 'training_status', value: value }})} required>
+                    <SelectTrigger className="w-full h-10">
+                      <SelectValue placeholder="Select Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Not Started">Not Started</SelectItem>
+                      <SelectItem value="In Progress">In Progress</SelectItem>
+                      <SelectItem value="Completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <DialogFooter>
                   <DialogClose asChild>
@@ -201,7 +213,7 @@ export default function Beneficiaries() {
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => handleDelete(b.id)}>
-                        <Trash2 className="h-4 w-4 text-red-500" />
+                        <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </TableCell>
                   </TableRow>

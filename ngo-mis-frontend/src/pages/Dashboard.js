@@ -41,13 +41,13 @@ import { Skeleton } from "../components/ui/skeleton"; // Import Skeleton
 
 // Use theme colors for charts
 const CHART_COLORS = [
-  "hsl(var(--secondary))", // Eco Green
-  "hsl(var(--primary))",   // Navy Blue
-  "hsl(var(--accent))",    // Mint Green
-  "hsl(var(--soft-teal))", // Soft Teal
-  "hsl(var(--status-pending))", // Pending
-  "hsl(var(--status-rejected))", // Rejected
-  "hsl(var(--muted-foreground))", // Muted
+  "hsl(var(--primary))",         // Primary color
+  "hsl(var(--secondary))",        // Secondary color
+  "hsl(var(--status-pending))",   // Softer orange/yellow
+  "hsl(var(--status-rejected))",  // Desaturated red
+  "hsl(var(--muted-foreground))", // Mid-grey for muted
+  "hsl(var(--accent))",           // Accent color
+  "hsl(var(--soft-teal))",        // Adjusted soft teal
 ];
 
 const StatCard = ({ title, value, icon, description }) => (
@@ -63,7 +63,7 @@ const StatCard = ({ title, value, icon, description }) => (
         <p className="text-xs text-muted-foreground">{description}</p>
       )}
     </CardContent>
-    <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-b-lg" /> {/* Emerald Green underline */}
+    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/50 to-transparent rounded-b-lg" /> {/* Subtle gradient underline */}
   </Card>
 );
 
@@ -112,6 +112,7 @@ export default function Dashboard() {
     hrSummary: null,
     mySummary: null,
     projectStats: null,
+    projectSummary: null, // New state for project summary data
     topHoneyProducers: null,
     topBeneficiaries: null,
     beneficiariesByVillage: [],
@@ -126,9 +127,11 @@ export default function Dashboard() {
       if (isAdminOrManager) {
         // Fetch modern dashboard data
         const modernRes = await dashboardService.getModernDashboardData();
+        const projectSummaryRes = await dashboardService.getProjectSummary();
         setDashboardData(prev => ({
           ...prev,
           modernData: modernRes,
+          projectSummary: projectSummaryRes,
         }));
       } else if (isHR) {
         const [hrRes, projectRes] = await Promise.all([
@@ -227,6 +230,35 @@ export default function Dashboard() {
                   value={modernData.foActivityCount || 0}
                   icon={<Activity className="h-4 w-4 text-muted-foreground" />}
                 />
+                {dashboardData.projectSummary && (
+                  <>
+                    <StatCard
+                      title="Trainings Conducted"
+                      value={dashboardData.projectSummary.total_trainings || 0}
+                      icon={<Activity className="h-4 w-4 text-muted-foreground" />}
+                    />
+                    <StatCard
+                      title="Participants Trained"
+                      value={dashboardData.projectSummary.total_participants || 0}
+                      icon={<Users className="h-4 w-4 text-muted-foreground" />}
+                    />
+                    <StatCard
+                      title="SHGs Covered"
+                      value={dashboardData.projectSummary.total_shgs || 0}
+                      icon={<Users className="h-4 w-4 text-muted-foreground" />}
+                    />
+                    <StatCard
+                      title="Expenses Used"
+                      value={`₹${dashboardData.projectSummary.total_expenses?.toLocaleString('en-IN') || 0}`}
+                      icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
+                    />
+                    <StatCard
+                      title="Pending Expenses"
+                      value={`₹${dashboardData.projectSummary.pending_expenses?.toLocaleString('en-IN') || 0}`}
+                      icon={<Hourglass className="h-4 w-4 text-muted-foreground" />}
+                    />
+                  </>
+                )}
                 {/* Attendance Stats */}
                 {(() => {
                   const attendancePercentages = calculatePercentages(modernData.attendanceStats, 'attendance');
@@ -290,10 +322,10 @@ export default function Dashboard() {
               ) : modernData.attendanceTrends && modernData.attendanceTrends.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <RechartsLineChart data={modernData.attendanceTrends} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted-foreground))" /> {/* Darker gridlines */}
-                    <XAxis dataKey="date" stroke="hsl(var(--primary))" tick={{ fill: "hsl(var(--primary))" }} />
-                    <YAxis stroke="hsl(var(--primary))" tick={{ fill: "hsl(var(--primary))" }} />
-                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "none", borderRadius: "0.5rem", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }} /> {/* Rounded glass effect */}
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" /> {/* Using border color for subtle gridlines */}
+                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "none", borderRadius: "0.75rem", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }} /> {/* Rounded glass effect, updated radius */}
                     <Legend />
                     <Line type="monotone" dataKey="present_count" name="Present Employees" stroke={CHART_COLORS[0]} activeDot={{ r: 8 }} />
                   </RechartsLineChart>

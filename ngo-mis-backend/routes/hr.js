@@ -93,7 +93,7 @@ router.get("/designations", verifyToken, async (req, res) => {
 router.post(
   "/employees",
   verifyToken,
-  allowRoles([1, 2, 5]),
+  allowRoles([1]),
   uploadProfile.single("photo"),
   async (req, res) => {
     let {

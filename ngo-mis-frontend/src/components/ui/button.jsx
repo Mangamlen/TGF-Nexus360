@@ -5,17 +5,17 @@ import { cva } from "class-variance-authority";
 import { cn } from "../../lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium ring-offset-background transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 hover:button-glow-primary", // Emerald background, white text, subtle glow
+        default: "bg-primary text-primary-foreground hover:bg-primary/80 hover:shadow-soft hover:scale-[1.02]", // Soft shadow, slight scale up
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90", // Flat red background, white text
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:shadow-soft hover:scale-[1.02]", // Added shadow and scale for consistency
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground", // Generic outline
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground hover:shadow-soft hover:scale-[1.02]", // Added shadow and scale for consistency
         secondary:
-          "border border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground", // Emerald border, Emerald text, solid white text on hover
+          "bg-secondary text-secondary-foreground hover:bg-secondary/90 hover:shadow-soft hover:scale-[1.02]", // Soft secondary color, subtle shadow, slight scale up
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
       },

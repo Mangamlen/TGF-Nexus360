@@ -14,6 +14,7 @@ import {
   Contact, // For Employee Directory
   DollarSign,
   Bug, // For Beekeeping
+  ClipboardList, // For Project Activities
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion"; // Added Accordion imports
@@ -30,7 +31,7 @@ export default function Sidebar() {
   const navItems = [
     (roleId === 1 || roleId === 2) && { to: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" />, text: "Dashboard" },
     { to: "/my-profile", icon: <User className="h-4 w-4" />, text: "My Profile" },
-    (roleId === 1 || roleId === 2 || roleId === 5) && { to: "/staff-registration", icon: <UserPlus className="h-4 w-4" />, text: "Staff Registration" },
+    roleId === 1 && { to: "/staff-registration", icon: <UserPlus className="h-4 w-4" />, text: "Staff Registration" },
     (roleId === 1 || roleId === 2 || roleId === 5) && { to: "/employees", icon: <Contact className="h-4 w-4" />, text: "Employee Directory" },
     (roleId === 1 || roleId === 2 || roleId === 5) && { to: "/beneficiaries", icon: <Users className="h-4 w-4" />, text: "Beneficiaries" },
     { to: "/reports", icon: <FileText className="h-4 w-4" />, text: "Reports" },
@@ -54,6 +55,9 @@ export default function Sidebar() {
     },
     (roleId === 1 || roleId === 2 || roleId === 5) && { to: "/expenses", icon: <DollarSign className="h-4 w-4" />, text: "Expenses" },
     (roleId === 1 || roleId === 2 || roleId === 5) && { to: "/beekeeping", icon: <Bug className="h-4 w-4" />, text: "Beekeeping" },
+    (roleId === 1 || roleId === 2 || roleId === 5) && { to: "/project-activities", icon: <ClipboardList className="h-4 w-4" />, text: "Project Activities" },
+    (roleId === 1 || roleId === 2 || roleId === 5) && { to: "/monthly-report", icon: <FileText className="h-4 w-4" />, text: "Monthly Report" },
+
     roleId === 1 && { to: "/activity", icon: <History className="h-4 w-4" />, text: "Activity Log" },
   ].filter(Boolean); // Filter out falsy values from conditional items
 

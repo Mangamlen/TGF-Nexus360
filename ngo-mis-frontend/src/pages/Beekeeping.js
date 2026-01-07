@@ -136,7 +136,7 @@ const Beekeeping = () => {
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold">Beekeeping Management</h1>
+                <h1 className="text-2xl font-semibold">Beekeeping Management</h1>
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
                         <Button>

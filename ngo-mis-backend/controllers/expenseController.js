@@ -13,7 +13,7 @@ const getEmployeeId = (user_id) => {
 
 // Submit a new expense
 exports.submitExpense = async (req, res) => {
-  const { category, amount, expense_date, description, receipt_url } = req.body;
+  const { category, amount, expense_date, description, receipt_url, project_id } = req.body;
   const user_id = req.user.id; // From verifyToken middleware
 
   if (!user_id || !category || !amount || !expense_date) {
@@ -24,10 +24,10 @@ exports.submitExpense = async (req, res) => {
     const employee_id = await getEmployeeId(user_id);
 
     const sql = `
-      INSERT INTO expenses (user_id, employee_id, category, amount, expense_date, description, receipt_url)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO expenses (user_id, employee_id, category, amount, expense_date, description, receipt_url, project_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
-    db.query(sql, [user_id, employee_id, category, amount, expense_date, description, receipt_url], (err) => {
+    db.query(sql, [user_id, employee_id, category, amount, expense_date, description, receipt_url, project_id], (err) => {
       if (err) {
         console.error("Error submitting expense:", err);
         return res.status(500).json({ error: err.message });
@@ -65,10 +65,16 @@ exports.getMyExpenses = async (req, res) => {
   try {
     const employee_id = await getEmployeeId(user_id);
     db.query(
-      "SELECT * FROM expenses WHERE employee_id = ? ORDER BY created_at DESC",
+      `SELECT e.*, p.project_name
+       FROM expenses e
+       LEFT JOIN projects p ON e.project_id = p.id
+       WHERE e.employee_id = ? ORDER BY e.created_at DESC`,
       [employee_id],
       (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+          console.error("SQL Error in getMyExpenses:", err); // Added logging
+          return res.status(500).json({ error: err.message });
+        }
         res.json(results);
       }
     );
@@ -81,13 +87,17 @@ exports.getMyExpenses = async (req, res) => {
 // Get all expenses (for admin/manager)
 exports.getAllExpenses = (req, res) => {
   db.query(
-    `SELECT e.*, u.name as user_name, emp.emp_code
+    `SELECT e.*, u.name as user_name, emp.emp_code, p.project_name
      FROM expenses e
      JOIN users u ON e.user_id = u.id
      LEFT JOIN employees emp ON e.employee_id = emp.id
+     LEFT JOIN projects p ON e.project_id = p.id
      ORDER BY e.created_at DESC`,
     (err, results) => {
-      if (err) return res.status(500).json({ error: err.message });
+      if (err) {
+        console.error("SQL Error in getAllExpenses:", err); // Added logging
+        return res.status(500).json({ error: err.message });
+      }
       res.json(results);
     }
   );
@@ -97,10 +107,11 @@ exports.getAllExpenses = (req, res) => {
 exports.getExpenseById = (req, res) => {
   const { id } = req.params;
   db.query(`
-    SELECT e.*, u.name as user_name, emp.emp_code
+    SELECT e.*, u.name as user_name, emp.emp_code, p.project_name
     FROM expenses e
     JOIN users u ON e.user_id = u.id
     LEFT JOIN employees emp ON e.employee_id = emp.id
+    LEFT JOIN projects p ON e.project_id = p.id
     WHERE e.id = ?`, [id], (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
     if (results.length === 0) return res.status(404).json({ message: "Expense not found." });
@@ -111,7 +122,7 @@ exports.getExpenseById = (req, res) => {
 // Update an existing expense
 exports.updateExpense = async (req, res) => {
   const { id } = req.params;
-  const { category, amount, expense_date, description, receipt_url, status } = req.body;
+  const { category, amount, expense_date, description, receipt_url, status, project_id } = req.body;
   const user_id = req.user.id; // From verifyToken middleware
 
   if (!category || !amount || !expense_date) {
@@ -123,9 +134,9 @@ exports.updateExpense = async (req, res) => {
     // For now, assuming user_id in expenses table is the creator.
     db.query(
       `UPDATE expenses 
-       SET category = ?, amount = ?, expense_date = ?, description = ?, receipt_url = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+       SET category = ?, amount = ?, expense_date = ?, description = ?, receipt_url = ?, status = ?, project_id = ?, updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
-      [category, amount, expense_date, description, receipt_url, status, id],
+      [category, amount, expense_date, description, receipt_url, status, project_id, id],
       (err) => {
         if (err) {
           console.error("Error updating expense:", err);

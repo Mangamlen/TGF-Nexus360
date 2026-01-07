@@ -55,10 +55,10 @@ export default function ActivityLog() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Activity Log</h1>
+      <h1 className="text-2xl font-semibold">Activity Log</h1>
       <Card>
         <CardHeader>
-          <CardTitle>System Activity Log</CardTitle>
+          <CardTitle className="text-xl font-medium">System Activity Log</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (

@@ -7,7 +7,7 @@ const router = express.Router();
 // Role-based access control:
 // We'll assume role 1 (Super Admin), 2 (Manager), and a new role, say 6 (Apiculture Specialist) can manage this.
 // For now, we'll allow roles 1 and 2 to do everything.
-const canManageBeekeeping = allowRoles([1, 2]);
+const canManageBeekeeping = allowRoles([1, 2, 5]);
 
 // --- Bee Box Routes ---
 

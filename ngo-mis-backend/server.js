@@ -44,6 +44,7 @@ const usersRouter = require("./routes/users");
 const notificationsRouter = require("./routes/notifications");
 const bellNotificationsRouter = require("./routes/bellNotifications");
 const beekeepingRouter = require("./routes/beekeeping"); // Add this line
+const projectsRouter = require("./routes/projects");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const apiLimiter = rateLimit({
@@ -67,6 +68,7 @@ app.use("/api/users", usersRouter);
 app.use("/api/notifications", notificationsRouter);
 app.use("/api/bell-notifications", bellNotificationsRouter);
 app.use("/api/beekeeping", beekeepingRouter); // Add this line
+app.use("/api/projects", projectsRouter);
 app.use("/api/activity", require("./routes/activity"));
 app.use(helmet());
 
