@@ -22,7 +22,6 @@ import Settings from "./pages/Settings"; // Import Settings
 import PrivateRoute from "./components/PrivateRoute";
 import MainLayout from "./layouts/MainLayout";
 import ProjectActivities from "./pages/ProjectActivities";
-import MonthlyReport from "./pages/MonthlyReport";
 
 
 
@@ -118,16 +117,6 @@ function App() {
               </PrivateRoute>
             }
           />
-          <Route
-            path="/monthly-report"
-            element={
-              <PrivateRoute allowedRoles={[1, 2, 5]}>
-                <MonthlyReport />
-              </PrivateRoute>
-            }
-          />
-
-
           {/* Super Admin only */}
           <Route
             path="/activity"

@@ -7,7 +7,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { toast } from "react-toastify";
-import { Chrome, Apple } from "lucide-react"; // Building icon for logo
+
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -93,28 +93,7 @@ export default function Login() {
               </Button>
             </div>
           </form>
-           <div className="relative my-4">
-             <div className="absolute inset-0 flex items-center">
-               <span className="w-full border-t" />
-             </div>
-             <div className="relative flex justify-center text-xs uppercase">
-               <span className="bg-background px-2 text-muted-foreground">
-                 Or continue with
-               </span>
-             </div>
-           </div>
-           <div className="grid grid-cols-2 gap-4">
-            <Button variant="outline">
-                <Apple className="mr-2 h-4 w-4" />
-                Apple ID
-            </Button>
-            <a href="http://localhost:5000/api/auth/google">
-              <Button variant="outline" className="w-full">
-                  <Chrome className="mr-2 h-4 w-4" />
-                  Google
-              </Button>
-            </a>
-           </div>
+
         </div>
       </div>
     </div>

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { getEmployeePayslip } from "../services/payrollService";
-import API from "../services/api";
+import { getEmployeePayslip, downloadPayslipPdf } from "../services/payrollService";
 import { getEmployeeId } from "../utils/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Label } from "../components/ui/label";
@@ -46,6 +45,31 @@ const Payslip = () => {
   useEffect(() => {
     fetchPayslip();
   }, [fetchPayslip]);
+
+  const handleDownloadPdf = async () => {
+    if (!employeeId || !month || !year) {
+      toast.error("Employee ID, month, or year is missing for download.");
+      return;
+    }
+    try {
+      setLoading(true);
+      const pdfBlob = await downloadPayslipPdf(employeeId, month, year);
+      const url = window.URL.createObjectURL(new Blob([pdfBlob], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `payslip_${month}_${year}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success("Payslip downloaded successfully!");
+    } catch (error) {
+      console.error("Error downloading payslip:", error);
+      toast.error("Failed to download payslip.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!employeeId) {
     return (
@@ -131,14 +155,7 @@ const Payslip = () => {
             {loading ? "Fetching..." : "Fetch Payslip"}
           </Button>
           {payslip && (
-            <a
-              href={`${API.defaults.baseURL}/payroll/payslip/download/${employeeId}/${month}/${year}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              download // Suggests browser to download the file
-            >
-              <Button variant="secondary">Download PDF</Button>
-            </a>
+            <Button variant="secondary" onClick={handleDownloadPdf}>Download PDF</Button>
           )}
         </div>
       </div>

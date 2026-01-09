@@ -4,97 +4,73 @@
 
 @layer base {
   :root {
-    /* --- Calm Color Palette Redefinition --- */
-    /* Backgrounds & Surfaces */
-    --background: 220 20% 97%;   /* Soft off-white/very light grey-blue for main background */
-    --card: 0 0% 100%;           /* Pure white for card surfaces for contrast, or very subtle light grey */
-    --popover: 0 0% 100%;        /* Pure white */
-    --input: 220 20% 95%;        /* Lighter shade of background for input fields */
-    
-    /* Text & Foreground */
-    --foreground: 220 10% 15%;   /* Deep charcoal/soft black for primary text */
-    --card-foreground: 220 10% 15%; /* Deep charcoal for text on cards */
-    --popover-foreground: 220 10% 15%;
-    
-    /* Primary (Muted Blue/Green - A Dusty Teal/Sage) */
-    --primary: 160 30% 45%;      /* Muted sage green/teal for primary actions */
-    --primary-foreground: 0 0% 100%; /* White for text on primary buttons */
-    
-    /* Secondary (Complementary Muted Tone - A Soft Grey-Blue) */
-    --secondary: 210 15% 65%;    /* Soft muted grey-blue for secondary actions */
-    --secondary-foreground: 220 10% 15%; /* Deep charcoal for text on secondary buttons */
-    
-    /* Muted Elements & Borders */
-    --muted: 220 15% 90%;        /* Light grey for muted backgrounds/elements */
-    --muted-foreground: 220 8% 45%; /* Mid-grey for muted text */
-    --border: 220 10% 85%;       /* Light grey for borders */
-    
-    /* Accent (Subtle highlight, can be same as secondary or a slightly different muted tone) */
-    --accent: 210 15% 65%;       /* Soft muted grey-blue (matching secondary for minimalism) */
-    --accent-foreground: 220 10% 15%; /* Deep charcoal */
-    
-    /* Destructive (Desaturated Red) */
-    --destructive: 0 70% 55%;    /* Desaturated red for destructive actions */
-    --destructive-foreground: 0 0% 100%; /* White */
-    
-    /* Ring (Focus state) */
-    --ring: 160 30% 45%;         /* Matching primary color for focus ring */
+    /* --- Premium & Calm Color Palette --- */
+    --background: 220 20% 98%;      /* Very light, almost white cool grey */
+    --foreground: 215 25% 25%;      /* Deep, soft navy-charcoal for text */
 
-    --radius: 1.5rem; /* Large rounded corners (24px) */
+    --card: 0 0% 100%;              /* Pure white for floating cards */
+    --card-foreground: 215 25% 25%;
 
-    /* Custom Status Colors - adjust to new palette */
-    --status-approved: 160 30% 45%;  /* Matching primary */
-    --status-rejected: 0 70% 55%;    /* Matching destructive */
-    --status-pending: 40 80% 60%;    /* Softer orange/yellow */
-    --status-locked: 220 8% 45%;     /* Matching muted-foreground */
-    --soft-teal: 160 25% 50%;        /* A slightly adjusted soft teal */
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 25%;
+
+    /* Primary Accent (Calm Green) */
+    --primary: 150 40% 40%;         /* Muted, earthy green */
+    --primary-foreground: 150 40% 98%; /* Very light green/white for text on primary */
+
+    /* Secondary Accent (Deep Navy) */
+    --secondary: 215 30% 40%;       /* Calm, deep navy blue */
+    --secondary-foreground: 215 30% 95%;
+
+    --muted: 220 20% 94%;           /* Lighter grey for muted backgrounds */
+    --muted-foreground: 220 10% 55%; /* Softer grey for muted text */
+
+    --accent: 220 20% 94%;
+    --accent-foreground: 215 25% 25%;
+
+    --destructive: 0 60% 50%;         /* A calmer, less vibrant red */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 20% 90%;          /* Subtle border color */
+    --input: 220 20% 96%;           /* Slightly off-white for inputs */
+    --ring: 150 40% 40%;            /* Green for focus rings */
+
+    --radius: 1.5rem;               /* 24px for large rounded corners */
   }
 
   .dark {
-    /* --- Dark Mode Calm Color Palette Redefinition --- */
-    /* Backgrounds & Surfaces */
-    --background: 220 15% 10%;   /* Dark grey-blue for main dark background */
-    --card: 220 15% 15%;         /* Slightly lighter dark grey-blue for card surfaces */
-    --popover: 220 15% 15%;      /* Slightly lighter dark grey-blue */
-    --input: 220 15% 20%;        /* Darker shade for input backgrounds */
-    
-    /* Text & Foreground */
-    --foreground: 220 20% 90%;   /* Light grey-blue for primary text */
-    --card-foreground: 220 20% 90%; /* Light grey-blue for text on cards */
-    --popover-foreground: 220 20% 90%;
-    
-    /* Primary (Muted Blue/Green - A Dusty Teal/Sage) */
-    --primary: 160 30% 45%;      /* Same muted sage green/teal */
-    --primary-foreground: 0 0% 100%; /* White */
-    
-    /* Secondary (Complementary Muted Tone - A Soft Grey-Blue) */
-    --secondary: 210 15% 65%;    /* Same soft muted grey-blue */
-    --secondary-foreground: 220 20% 90%; /* Light grey-blue */
-    
-    /* Muted Elements & Borders */
-    --muted: 220 15% 25%;        /* Darker grey for muted backgrounds/elements */
-    --muted-foreground: 220 8% 70%; /* Lighter mid-grey for muted text */
-    --border: 220 15% 30%;       /* Darker grey for borders */
-    
-    /* Accent (Subtle highlight) */
-    --accent: 210 15% 65%;       /* Same soft muted grey-blue */
-    --accent-foreground: 220 20% 90%; /* Light grey-blue */
-    
-    /* Destructive (Desaturated Red) */
-    --destructive: 0 70% 55%;    /* Same desaturated red */
-    --destructive-foreground: 0 0% 100%; /* White */
-    
-    /* Ring (Focus state) */
-    --ring: 160 30% 45%;         /* Matching primary color */
-    
-    --radius: 0.75rem; /* Same radius */
+    /* --- Premium & Calm Dark Mode --- */
+    --background: 220 15% 5%;       /* Very dark navy, almost black */
+    --foreground: 220 15% 90%;      /* Light, soft grey for text */
 
-    /* Custom Status Colors - adjust to new palette */
-    --status-approved: 160 30% 45%;
-    --status-rejected: 0 70% 55%;
-    --status-pending: 40 80% 60%;
-    --status-locked: 220 8% 70%;
-    --soft-teal: 160 25% 50%;
+    --card: 220 15% 12%;            /* Floating dark card surface */
+    --card-foreground: 220 15% 90%;
+
+    --popover: 220 15% 12%;
+    --popover-foreground: 220 15% 90%;
+
+    /* Primary Accent (Calm Green) */
+    --primary: 150 45% 55%;         /* A slightly brighter green for dark mode contrast */
+    --primary-foreground: 150 40% 10%;
+
+    /* Secondary Accent (Deep Navy) */
+    --secondary: 215 35% 55%;       /* A slightly brighter navy for dark mode */
+    --secondary-foreground: 215 30% 95%;
+
+    --muted: 220 15% 20%;
+    --muted-foreground: 220 10% 65%;
+
+    --accent: 220 15% 20%;
+    --accent-foreground: 220 15% 90%;
+
+    --destructive: 0 60% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 25%;
+    --input: 220 15% 18%;
+    --ring: 150 45% 55%;
+
+    --radius: 1.5rem;
   }
 }
 
@@ -105,7 +81,21 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "liga" on, "calt" on;
-    /* For Inter font, ensure it's loaded if not via Tailwind config directly */
+    background: linear-gradient(175deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%);
+  }
+}
+ 
+@layer components {
+  /* Subtle glow for active NavLink */
+  .glow-primary-subtle {
+      box-shadow: 0 0 15px hsl(var(--primary) / 0.3), 0 0 5px hsl(var(--primary) / 0.2);
+  }
+  
+  /* Glow effect for buttons on hover/focus */
+  .hover\:button-glow-primary:hover, .hover\:button-glow-primary:focus {
+      box-shadow: 0 0 20px hsl(var(--primary) / 0.4), 0 0 8px hsl(var(--primary) / 0.3);
+      transform: translateY(-1px);
+      transition: all 0.2s ease-out;
   }
 }
 
@@ -118,7 +108,7 @@
   border-radius: var(--radius); /* Large rounded corners */
   font-family: "Inter", sans-serif; /* Ensure Inter font */
   line-height: 1.125em;
-  box-shadow: var(--shadow-soft); /* Apply soft shadow */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
 .react-calendar--doubleView {

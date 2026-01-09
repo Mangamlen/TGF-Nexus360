@@ -81,3 +81,22 @@ export const getRunDetails = async (month, year) => {
     throw err;
   }
 };
+
+/**
+ * Downloads a specific employee's payslip PDF for a given month and year.
+ * @param {number} employeeId The ID of the employee.
+ * @param {string} month The month of the payslip (e.g., "December").
+ * @param {number} year The year of the payslip.
+ * @returns {Blob} The payslip PDF file as a blob.
+ */
+export const downloadPayslipPdf = async (employeeId, month, year) => {
+  try {
+    const response = await API.get(`/payroll/payslip/download/${employeeId}/${month}/${year}`, {
+      responseType: 'blob', // Important for downloading files
+    });
+    return response.data;
+  } catch (err) {
+    toast.error(err.response?.data?.error || "Failed to download payslip PDF.");
+    throw err;
+  }
+};

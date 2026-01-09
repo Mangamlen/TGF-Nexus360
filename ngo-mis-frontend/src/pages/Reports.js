@@ -12,6 +12,7 @@ import { Label } from "../components/ui/label";
 import { Badge } from "../components/ui/badge";
 import { Download, Check, Lock, History, Loader2, Users } from "lucide-react"; // Import Icons
 import * as dashboardService from "../services/dashboardService"; // Import dashboard service
+import * as reportService from "../services/reportService"; // Import report service
 import { Skeleton } from "../components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"; // Import Skeleton
 
@@ -152,6 +153,22 @@ export default function Reports() {
     setDialogs(prev => ({ ...prev, audit: true }));
   };
   
+  const handleDownload = async (fileId, filename) => {
+    try {
+      const blob = await reportService.downloadReport(fileId);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      // Error is handled in the service
+    }
+  };
+
   const getStatusBadge = (status) => {
     switch (status) {
       case 'Approved':
@@ -243,10 +260,8 @@ export default function Reports() {
                     <TableCell>{getStatusBadge(report.status)}</TableCell>
                     <TableCell className="text-right space-x-2">
                       {report.file_id && (
-                        <Button variant="outline" size="sm" asChild>
-                          <a href={`${API.defaults.baseURL}/reports/download/${report.file_id}`} download>
-                            <Download className="h-4 w-4" />
-                          </a>
+                        <Button variant="outline" size="sm" onClick={() => handleDownload(report.file_id, `Report-${report.month}-${report.year}.xlsx`)}>
+                          <Download className="h-4 w-4" />
                         </Button>
                       )}
                       <Button variant="outline" size="sm" onClick={() => openAuditDialog(report)}>

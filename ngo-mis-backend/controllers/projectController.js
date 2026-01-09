@@ -1,5 +1,4 @@
 const db = require('../db');
-const reportGenerator = require('../services/reportGenerator');
 
 // Project Activities
 exports.createActivity = async (req, res) => {
@@ -89,17 +88,6 @@ exports.getActivityOutputs = async (req, res) => {
         res.status(200).json(rows);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching activity outputs', error });
-    }
-};
-
-// Monthly Report
-exports.generateReport = async (req, res) => {
-    const { month, year } = req.body;
-    try {
-        const report = await reportGenerator.generateMonthlyReport(month, year);
-        res.status(200).json(report);
-    } catch (error) {
-        res.status(500).json({ message: 'Error generating monthly report', error });
     }
 };
 

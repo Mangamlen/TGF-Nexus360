@@ -29,10 +29,6 @@ const projectService = {
         }
     },
 
-    generateReport: (month, year) => {
-        return api.post('/projects/monthly-report', { month, year });
-    },
-
     getAllProjects: () => {
         return api.get('/projects'); // Assuming a /projects endpoint for all projects
     },

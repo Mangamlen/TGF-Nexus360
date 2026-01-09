@@ -4,6 +4,7 @@ import * as beneficiaryService from "../services/beneficiaryService";
 import { toast } from "react-toastify";
 
 import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "../components/ui/dialog";
@@ -185,42 +186,38 @@ export default function Beneficiaries() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <TableSkeleton />
+            <div className="space-y-4">
+              {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}
+            </div>
           ) : beneficiaries.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Village</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Training Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {beneficiaries.map((b) => (
-                  <TableRow key={b.id}>
-                    <TableCell className="font-medium">
-                      <Link to={`/beneficiary/${b.id}`} className="hover:underline">
+            <div className="space-y-4">
+              {beneficiaries.map((b) => (
+                <Card key={b.id} className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex flex-col">
+                      <Link to={`/beneficiary/${b.id}`} className="font-semibold hover:underline">
                         {b.name}
                       </Link>
-                    </TableCell>
-                    <TableCell>{b.village}</TableCell>
-                    <TableCell>{b.phone}</TableCell>
-                    <TableCell>{b.training_status}</TableCell>
-                    <TableCell className="text-right">
-                       <Button variant="ghost" size="icon" onClick={() => handleUpdateStatus(b.id, b.training_status)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(b.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              }
-              </TableBody>
-            </Table>
+                      <span className="text-sm text-muted-foreground">{b.village} | {b.phone}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Badge variant={
+                      b.training_status === 'Completed' ? 'default' : 
+                      b.training_status === 'In Progress' ? 'secondary' : 'outline'
+                    }>
+                      {b.training_status}
+                    </Badge>
+                    <Button variant="ghost" size="icon" onClick={() => handleUpdateStatus(b.id, b.training_status)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(b.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
           ) : (
             <div className="flex items-center justify-center h-24 text-muted-foreground">
               No beneficiaries found.

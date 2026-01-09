@@ -8,9 +8,14 @@ import * as employeeService from "../services/employeeService";
 import * as authService from "../services/authService";
 import * as notificationService from "../services/notificationService"; // New import
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import RoleManager from "./Settings/RoleManager";
+import { getRoleId } from "../utils/auth";
+
 import { useTheme } from "../components/ThemeProvider";
 
 export default function Settings() {
+  const [roleId, setRoleId] = useState(null);
+
   // State for Update Profile form
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -34,6 +39,8 @@ export default function Settings() {
   const { theme, setTheme } = useTheme();
 
   useEffect(() => {
+    setRoleId(getRoleId());
+
     const fetchProfile = async () => {
       try {
         const profile = await employeeService.getProfile();
@@ -145,6 +152,19 @@ export default function Settings() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Role Management Card (Admin only) */}
+      {roleId === 1 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>User Role Management</CardTitle>
+            <p className="text-sm text-muted-foreground">Assign and update roles for users in the system.</p>
+          </CardHeader>
+          <CardContent>
+            <RoleManager />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Change Password Card */}
       <Card>

@@ -6,18 +6,11 @@ const Card = React.forwardRef(({ className, ...props }, ref) => (
   <div
     ref={ref}
     className={cn(
-      "group relative overflow-hidden rounded-lg border bg-card/70 backdrop-blur-sm text-card-foreground shadow-soft-lg transition-all duration-200 ease-in-out hover:shadow-xl hover:-translate-y-[3px]", // Added bg-card/70 and backdrop-blur-sm
+      "rounded-lg border bg-card text-card-foreground shadow-sm transition-all duration-300 ease-in-out hover:shadow-md hover:-translate-y-1",
       className
     )}
     {...props}
-  >
-    {/* Subtle Gradient Edge (kept for soft light effect) */}
-    <div className="absolute inset-0 rounded-lg pointer-events-none" style={{
-      background: 'radial-gradient(ellipse at top left, rgba(255,255,255,0.05) 0%, transparent 40%), radial-gradient(ellipse at bottom right, rgba(0,0,0,0.05) 0%, transparent 40%)'
-    }} />
-
-    {props.children}
-  </div>
+  />
 ))
 Card.displayName = "Card"
 

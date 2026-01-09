@@ -1,46 +1,76 @@
+// src/pages/StaffRegistration.js
 import { useState, useEffect, useCallback } from "react";
 import * as employeeService from "../services/employeeService";
 import { toast } from "react-toastify";
-
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
-import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
 import { Loader2 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"; // Import Select components
-import { Skeleton } from "../components/ui/skeleton"; // Import Skeleton
+import { Stepper } from "../components/ui/stepper"; // Import Stepper
+
+import PersonalInformationStep from "./StaffRegistration/PersonalInformationStep";
+import ContactInformationStep from "./StaffRegistration/ContactInformationStep";
+import JobDetailsStep from "./StaffRegistration/JobDetailsStep";
+import BankAccountStep from "./StaffRegistration/BankAccountStep";
+
+const steps = ["Personal", "Contact", "Job", "Bank"];
 
 export default function StaffRegistration() {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [isDropdownsLoading, setIsDropdownsLoading] = useState(true);
+
   const [formData, setFormData] = useState({
+    // Step 1
     name: "",
     email: "",
     password: "",
-    role_id: "3", // Default to Employee role
+    confirm_password: "",
+    role_id: "3", // Default to Employee
+    date_of_birth: "",
+    gender: "Male",
+    photo: null,
+    // Step 2
+    mobile_number: "",
+    alternate_number: "",
+    official_email: "",
+    address_line_1: "",
+    address_line_2: "",
+    city: "",
+    state: "",
+    pin_code: "",
+    emergency_contact_name: "",
+    emergency_contact_number: "",
+    // Step 3
     emp_code: "",
     department_id: "",
     designation_id: "",
+    employment_type: "Permanent",
     joining_date: "",
     salary: "",
-    phone: "",
-    address: "",
-    photo: null,
+    reporting_manager: "",
+    work_location: "",
+    status: "Onboarding",
+    // Step 4
+    account_holder_name: "",
+    bank_name: "",
+    account_number: "",
+    ifsc_code: "",
+    branch_name: "",
+    upi_id: "",
+    pan_number: "",
+    aadhaar_number: "",
   });
+
   const [departments, setDepartments] = useState([]);
   const [designations, setDesignations] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [photoPreview, setPhotoPreview] = useState(null);
-  const [isDropdownsLoading, setIsDropdownsLoading] = useState(true); // New loading state for dropdowns
-
-  // Hardcoded roles for dropdown
   const roles = [
-    { id: 1, name: "Super Admin" },
-    { id: 2, name: "Admin" },
-    { id: 3, name: "Employee" },
-    { id: 5, name: "Field User" },
+    { id: 1, name: "Super Admin" }, { id: 2, name: "Admin" },
+    { id: 3, name: "Employee" }, { id: 5, name: "Field User" },
   ];
 
   const fetchDropdownData = useCallback(async () => {
-    setIsDropdownsLoading(true); // Set loading true
+    setIsDropdownsLoading(true);
     try {
       const [deps, desigs] = await Promise.all([
         employeeService.getDepartments(),
@@ -48,17 +78,15 @@ export default function StaffRegistration() {
       ]);
       setDepartments(deps);
       setDesignations(desigs);
-      // Set default values if available
-      setFormData(prev => ({ 
-        ...prev, 
-        department_id: deps.length > 0 ? deps[0].id.toString() : "", // Convert to string for Select
-        designation_id: desigs.length > 0 ? desigs[0].id.toString() : "" // Convert to string for Select
+      setFormData(prev => ({
+        ...prev,
+        department_id: deps.length > 0 ? deps[0].id.toString() : "",
+        designation_id: desigs.length > 0 ? desigs[0].id.toString() : "",
       }));
     } catch (error) {
-      console.error("Failed to fetch dropdown data:", error);
-      toast.error("Failed to load department or designation data.");
+      toast.error("Failed to load dropdown data.");
     } finally {
-      setIsDropdownsLoading(false); // Set loading false
+      setIsDropdownsLoading(false);
     }
   }, []);
 
@@ -78,15 +106,18 @@ export default function StaffRegistration() {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     setFormData(prev => ({ ...prev, photo: file }));
-    if (file) {
-      setPhotoPreview(URL.createObjectURL(file));
-    } else {
-      setPhotoPreview(null);
-    }
+    if (file) setPhotoPreview(URL.createObjectURL(file));
+    else setPhotoPreview(null);
   };
+  
+  const nextStep = () => setCurrentStep(prev => (prev < steps.length ? prev + 1 : prev));
+  const prevStep = () => setCurrentStep(prev => (prev > 1 ? prev - 1 : prev));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (formData.password !== formData.confirm_password) {
+      return toast.error("Passwords do not match.");
+    }
     setIsSubmitting(true);
 
     const data = new FormData();
@@ -99,139 +130,49 @@ export default function StaffRegistration() {
     try {
       await employeeService.registerStaff(data);
       toast.success("Staff registered successfully!");
-      // Reset form on success
+      // Reset form
+      setCurrentStep(1);
       setFormData({
-        name: "", email: "", password: "", role_id: "3", emp_code: "", 
-        department_id: departments[0]?.id.toString() || "", // Convert to string for Select
-        designation_id: designations[0]?.id.toString() || "", // Convert to string for Select
-        joining_date: "", salary: "", phone: "", address: "", photo: null,
+        name: "", email: "", password: "", confirm_password: "", role_id: "3", date_of_birth: "", gender: "Male", photo: null,
+        mobile_number: "", alternate_number: "", official_email: "", address_line_1: "", address_line_2: "", city: "", state: "", pin_code: "", emergency_contact_name: "", emergency_contact_number: "",
+        emp_code: "", department_id: departments[0]?.id.toString() || "", designation_id: designations[0]?.id.toString() || "", employment_type: "Permanent", joining_date: "", salary: "", reporting_manager: "", work_location: "", status: "Onboarding",
+        account_holder_name: "", bank_name: "", account_number: "", ifsc_code: "", branch_name: "", upi_id: "", pan_number: "", aadhaar_number: "",
       });
       setPhotoPreview(null);
     } catch (error) {
-      // Error handled by service
+      // Error is handled in the service
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Staff Registration</CardTitle>
-          <CardDescription>Register a new user and create their employee profile.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* User Details */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold border-b pb-2 mb-4">User Account</h3>
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input id="name" name="name" value={formData.name} onChange={handleChange} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" name="password" type="password" value={formData.password} onChange={handleChange} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="role_id">Role</Label>
-                {isDropdownsLoading ? (
-                    <Skeleton className="h-10 w-full" />
-                ) : (
-                    <Select value={formData.role_id} onValueChange={(value) => handleSelectChange("role_id", value)}>
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {roles.map(role => (
-                                <SelectItem key={role.id} value={role.id.toString()}>{role.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                )}
-              </div>
-            </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Staff Registration</CardTitle>
+        <CardDescription>Follow the steps to register a new employee.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Stepper currentStep={currentStep} steps={steps} />
+        <form onSubmit={handleSubmit} className="mt-8">
+          {currentStep === 1 && <PersonalInformationStep formData={formData} handleChange={handleChange} handleSelectChange={handleSelectChange} handleFileChange={handleFileChange} photoPreview={photoPreview} roles={roles} isDropdownsLoading={isDropdownsLoading} />}
+          {currentStep === 2 && <ContactInformationStep formData={formData} handleChange={handleChange} />}
+          {currentStep === 3 && <JobDetailsStep formData={formData} handleChange={handleChange} handleSelectChange={handleSelectChange} departments={departments} designations={designations} isDropdownsLoading={isDropdownsLoading} />}
+          {currentStep === 4 && <BankAccountStep formData={formData} handleChange={handleChange} />}
 
-            {/* Employee Details */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold border-b pb-2 mb-4">Employee Profile</h3>
-              <div className="space-y-2">
-                <Label htmlFor="emp_code">Employee Code</Label>
-                <Input id="emp_code" name="emp_code" value={formData.emp_code} onChange={handleChange} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="department_id">Department</Label>
-                {isDropdownsLoading ? (
-                    <Skeleton className="h-10 w-full" />
-                ) : (
-                    <Select value={formData.department_id} onValueChange={(value) => handleSelectChange("department_id", value)}>
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select a department" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {departments.map(dep => (
-                                <SelectItem key={dep.id} value={dep.id.toString()}>{dep.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="designation_id">Designation</Label>
-                {isDropdownsLoading ? (
-                    <Skeleton className="h-10 w-full" />
-                ) : (
-                    <Select value={formData.designation_id} onValueChange={(value) => handleSelectChange("designation_id", value)}>
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select a designation" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {designations.map(desig => (
-                                <SelectItem key={desig.id} value={desig.id.toString()}>{desig.title}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="joining_date">Joining Date</Label>
-                <Input id="joining_date" name="joining_date" type="date" value={formData.joining_date} onChange={handleChange} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="salary">Salary</Label>
-                <Input id="salary" name="salary" type="number" value={formData.salary} onChange={handleChange} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <Input id="address" name="address" value={formData.address} onChange={handleChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="photo">Profile Photo</Label>
-                <Input id="photo" name="photo" type="file" onChange={handleFileChange} accept="image/*" />
-                {photoPreview && (
-                  <img src={photoPreview} alt="Profile Preview" className="mt-2 h-20 w-20 rounded-full object-cover" />
-                )}
-              </div>
-            </div>
-
-            <div className="md:col-span-2">
-              <Button type="submit" disabled={isSubmitting} variant="secondary">
+          <div className="flex justify-between mt-8">
+            {currentStep > 1 && <Button type="button" variant="outline" onClick={prevStep}>Previous</Button>}
+            <div />
+            {currentStep < steps.length && <Button type="button" variant="secondary" onClick={nextStep}>Next</Button>}
+            {currentStep === steps.length && (
+              <Button type="submit" variant="secondary" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Register Employee
+                Submit Registration
               </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+            )}
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

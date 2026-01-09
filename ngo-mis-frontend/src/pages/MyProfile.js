@@ -30,8 +30,8 @@ export default function MyProfile() {
       const data = await employeeService.getProfile();
       setProfileData(data);
       setFormData({
-        phone: data.phone || "",
-        address: data.address || "",
+        phone: data.mobile_number || "",
+        address: data.address_line_1 || "",
         photo: null,
       });
       if (data.photo_path) {

@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { CircleUser, Search, Bell } from "lucide-react";
+import { CircleUser, Search, Bell, Menu } from "lucide-react";
 import * as notificationBellService from "../services/notificationBellService";
 import { cn } from "../lib/utils";
 
@@ -16,7 +16,7 @@ import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { clearAuth } from "../utils/auth";
 
-export default function Header() {
+export default function Header({ toggleSidebar }) {
   const navigate = useNavigate(); // Add this
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -72,7 +72,16 @@ export default function Header() {
   };
 
   return (
-    <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+    <header className="flex h-14 items-center gap-4 border-b border-border/20 bg-card/60 backdrop-blur-xl px-4 lg:h-[60px] lg:px-6">
+      <Button
+        variant="secondary"
+        size="icon"
+        onClick={toggleSidebar}
+        className="shrink-0"
+      >
+        <Menu className="h-5 w-5" />
+        <span className="sr-only">Toggle sidebar</span>
+      </Button>
       {/* This is a placeholder for the mobile sidebar toggle, which we can implement later */}
       <div className="w-full flex-1">
         <form>

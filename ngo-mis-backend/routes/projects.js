@@ -19,9 +19,6 @@ router.post('/activities/:activityId/expenses', authMiddleware.verifyToken, auth
 router.get('/activities/:activityId/expenses', authMiddleware.verifyToken, authMiddleware.allowRoles([1, 2, 5]), projectController.getProjectExpenses);
 router.get('/expenses', authMiddleware.verifyToken, authMiddleware.allowRoles([1, 2, 5]), projectController.getProjectExpenses);
 
-// Monthly Report
-router.post('/monthly-report', authMiddleware.verifyToken, authMiddleware.allowRoles([1, 2, 5]), projectController.generateReport);
-
 // Get all projects
 router.get('/', authMiddleware.verifyToken, authMiddleware.allowRoles([1, 2, 5]), projectController.getAllProjects);
 

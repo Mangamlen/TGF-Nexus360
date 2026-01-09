@@ -216,97 +216,25 @@ export default function Dashboard() {
             ) : (
               <>
                 <StatCard
-                  title="Approved Reports"
-                  value={modernData.approvedReportsCount || 0}
-                  icon={<FileText className="h-4 w-4 text-muted-foreground" />}
-                />
-                <StatCard
                   title="Total Beneficiaries"
                   value={modernData.totalBeneficiaries || 0}
                   icon={<Users className="h-4 w-4 text-muted-foreground" />}
                 />
                 <StatCard
-                  title="FO Activity Count"
-                  value={modernData.foActivityCount || 0}
-                  icon={<Activity className="h-4 w-4 text-muted-foreground" />}
+                  title="Approved Reports"
+                  value={modernData.approvedReportsCount || 0}
+                  icon={<FileText className="h-4 w-4 text-muted-foreground" />}
                 />
-                {dashboardData.projectSummary && (
-                  <>
-                    <StatCard
-                      title="Trainings Conducted"
-                      value={dashboardData.projectSummary.total_trainings || 0}
-                      icon={<Activity className="h-4 w-4 text-muted-foreground" />}
-                    />
-                    <StatCard
-                      title="Participants Trained"
-                      value={dashboardData.projectSummary.total_participants || 0}
-                      icon={<Users className="h-4 w-4 text-muted-foreground" />}
-                    />
-                    <StatCard
-                      title="SHGs Covered"
-                      value={dashboardData.projectSummary.total_shgs || 0}
-                      icon={<Users className="h-4 w-4 text-muted-foreground" />}
-                    />
-                    <StatCard
-                      title="Expenses Used"
-                      value={`₹${dashboardData.projectSummary.total_expenses?.toLocaleString('en-IN') || 0}`}
-                      icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
-                    />
-                    <StatCard
-                      title="Pending Expenses"
-                      value={`₹${dashboardData.projectSummary.pending_expenses?.toLocaleString('en-IN') || 0}`}
-                      icon={<Hourglass className="h-4 w-4 text-muted-foreground" />}
-                    />
-                  </>
-                )}
-                {/* Attendance Stats */}
-                {(() => {
-                  const attendancePercentages = calculatePercentages(modernData.attendanceStats, 'attendance');
-                  return (
-                    <>
-                      <StatCard
-                        title="Present % (Last 30 Days)"
-                        value={`${attendancePercentages.present}%`}
-                        icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
-                      />
-                      <StatCard
-                        title="Absent % (Last 30 Days)"
-                        value={`${attendancePercentages.absent}%`}
-                        icon={<XCircle className="h-4 w-4 text-muted-foreground" />}
-                      />
-                    </>
-                  );
-                })()}
-                {/* Leave Status */}
-                {(() => {
-                  const leaveStats = modernData.leaveStatus;
-                  const leavePercentages = calculatePercentages(modernData.leaveStatus, 'leave');
-
-
-                  const pendingLeaves = leaveStats.find(item => item.status === 'Pending')?.count || 0;
-                  const approvedLeaves = leaveStats.find(item => item.status === 'Approved')?.count || 0;
-                  const rejectedLeaves = leaveStats.find(item => item.status === 'Rejected')?.count || 0;
-
-                  return (
-                    <>
-                      <StatCard
-                        title="Pending Leaves"
-                        value={`${leavePercentages.pending}% (${pendingLeaves})`}
-                        icon={<Clock className="h-4 w-4 text-muted-foreground" />}
-                      />
-                      <StatCard
-                        title="Approved Leaves"
-                        value={`${leavePercentages.approved}% (${approvedLeaves})`}
-                        icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
-                      />
-                      <StatCard
-                        title="Rejected Leaves"
-                        value={`${leavePercentages.rejected}% (${rejectedLeaves})`}
-                        icon={<XCircle className="h-4 w-4 text-muted-foreground" />}
-                      />
-                    </>
-                  );
-                })()}
+                <StatCard
+                  title="Total Expenses"
+                  value={`₹${dashboardData.projectSummary?.total_expenses?.toLocaleString('en-IN') || 0}`}
+                  icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
+                />
+                <StatCard
+                  title="Pending Leaves"
+                  value={modernData.leaveStatus?.find(item => item.status === 'Pending')?.count || 0}
+                  icon={<Clock className="h-4 w-4 text-muted-foreground" />}
+                />
               </>
             )}
           </div>
@@ -400,34 +328,25 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Top 5 Honey Producers Table */}
+          {/* Top 5 Honey Producers List */}
           <div className="col-span-12 lg:col-span-6">
             <Card>
               <CardHeader>
                 <CardTitle>Top 5 Honey Producers</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 {isLoading ? (
-                  <TableSkeleton />
+                  Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)
                 ) : modernData.topHoneyProducers && modernData.topHoneyProducers.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Beneficiary</TableHead>
-                        <TableHead>Village</TableHead>
-                        <TableHead className="text-right">Honey (kg)</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {modernData.topHoneyProducers.map((p, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{p.name}</TableCell>
-                          <TableCell>{p.village}</TableCell>
-                          <TableCell className="text-right">{p.total_honey_kg} kg</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  modernData.topHoneyProducers.map((p, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted">
+                      <div>
+                        <p className="font-semibold">{p.name}</p>
+                        <p className="text-sm text-muted-foreground">{p.village}</p>
+                      </div>
+                      <p className="font-bold text-primary">{p.total_honey_kg} kg</p>
+                    </div>
+                  ))
                 ) : (
                   <div className="flex h-24 items-center justify-center text-muted-foreground">
                     No top producers data available.
@@ -437,32 +356,22 @@ export default function Dashboard() {
             </Card>
           </div>
 
-          {/* Top 5 Performing Beneficiaries Table */}
+          {/* Top 5 Performing Beneficiaries List */}
           <div className="col-span-12 lg:col-span-6">
             <Card>
               <CardHeader>
                 <CardTitle>Top 5 Performing Beneficiaries</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 {isLoading ? (
-                  <TableSkeleton />
+                  Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)
                 ) : modernData.topPerformingBeneficiaries && modernData.topPerformingBeneficiaries.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Beneficiary</TableHead>
-                        <TableHead className="text-right">Honey (kg)</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {modernData.topPerformingBeneficiaries.map((b, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{b.name}</TableCell>
-                          <TableCell className="text-right">{b.total_honey_kg} kg</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  modernData.topPerformingBeneficiaries.map((b, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted">
+                        <p className="font-semibold">{b.name}</p>
+                        <p className="font-bold text-primary">{b.total_honey_kg} kg</p>
+                    </div>
+                  ))
                 ) : (
                   <div className="flex h-24 items-center justify-center text-muted-foreground">
                     No top beneficiaries data available.
